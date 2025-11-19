@@ -184,6 +184,66 @@ killall -9 WolframKernel
 pip install -r requirements.txt
 ```
 
+## Model Catalogue Development (`devel_catalogue/`)
+
+**Experimental feature**: Automated canonical formulation catalogue using PSALTer.
+
+### Structure
+
+```
+devel_catalogue/
+├── HasdrubalPSALTer.m           # Main script demonstrating workflow
+├── HasdrubalPSALTer.nb          # Notebook with results
+└── HasdrubalPSALTer/
+    ├── TimeD.m                  # Time derivative operators for tensor evolution
+    ├── ThreePlusOne.m           # 3+1 decomposition orchestrator
+    └── ThreePlusOne/            # Modular 3+1 processing pipeline
+        ├── ExtractFields.m
+        ├── PrepareAutomaticRules.m
+        ├── FieldThreePlusOne.m
+        ├── ActivateTimeD.m
+        ├── ProjectMetric.m
+        ├── ApplyDerivativeRules.m
+        ├── DefineMomenta.m
+        ├── SolveVelocities.m
+        └── ConstructCanonicalHamiltonian.m
+```
+
+### Purpose
+
+Generate canonical Hamiltonians for field theories using automated 3+1 decomposition:
+
+1. **Input**: Covariant Lagrangian (e.g., Maxwell theory with mass term)
+2. **Processing**: 3+1 split → momentum definitions → velocity solving → Hamiltonian construction
+3. **Output**: Total Hamiltonian with constraints and Lagrange multipliers
+
+### Key Components
+
+- **`TimeD.m`**: Defines `DefTimeTensor` for time-dependent tensors and implements `TimeD[]` operator for time derivatives up to 6th order (snap, crackle, pop)
+- **`ThreePlusOne.m`**: Pipeline coordinator that processes field theories through 9 modular steps
+- **`ThreePlusOne/`**: Individual processing stages (field extraction, metric projection, momentum definitions, velocity solving, Hamiltonian construction)
+
+### Example Usage
+
+```mathematica
+<<xAct`PSALTer`;
+<<xAct`xPlain`;
+Get@"HasdrubalPSALTer/ThreePlusOne.m";
+
+(* Define Maxwell Lagrangian with mass term *)
+DefField[VectorField[a]];
+Expr = -(1/4)*(CD[a]@VectorField[b] - CD[b]@VectorField[a])*
+               (CD[-a]@VectorField[-b] - CD[-b]@VectorField[-a]) +
+       VectorField[-a]*VectorField[a];
+
+(* Automated 3+1 processing *)
+Expr //= ThreePlusOne;
+```
+
+### Current Status
+
+Development/experimental. Not integrated with main Hasdrubal agent workflow. Used for generating reference canonical formulations that inform the agent's physics knowledge.
+
 ## Dependencies
 
 - **Python**: 3.13.7 with venv at `./venv`

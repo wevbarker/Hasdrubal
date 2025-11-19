@@ -80,6 +80,7 @@ ThreePlusOne[InputExpr_]:=Module[{
 	CanonicalHamiltonian=ThreePlusOneLagrangian;
 	CanonicalHamiltonian//=ConstructCanonicalHamiltonian;
 	CanonicalHamiltonian//=(#/.VelocitySolutions)&;
+	CanonicalHamiltonian//=NoScalar;
 	CanonicalHamiltonian//=ToCanonical;
 	CanonicalHamiltonian//=ContractMetric;
 	CanonicalHamiltonian//=ScreenDollarIndices;
