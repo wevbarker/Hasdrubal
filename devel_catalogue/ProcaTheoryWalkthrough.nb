@@ -1,0 +1,60 @@
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[         0,          0]
+NotebookDataLength[      1726,         59]
+NotebookOptionsPosition[       906,         30]
+NotebookOutlinePosition[      1494,         51]
+CellTagsIndexPosition[      1451,         48]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData["\<\"OK, so we are going to analyse the Maxwell theory \
+now.\"\>"], "Print",
+ CellChangeTimes->{3.972831258474244*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"07e10ad8-df87-448e-bd81-8a8e63dd89ec"],
+
+Cell[BoxData["\<\"The first step is to load the Hamilcar package.\"\>"], \
+"Print",
+ CellChangeTimes->{3.972831258475222*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"0fdabcdf-80cd-47f1-8173-0eff69573a81"]
+}, Open  ]]
+},
+WindowSize->{1677, 1003.5},
+WindowMargins->{{0, Automatic}, {0, Automatic}},
+WindowElements->{},
+FontColor->RGBColor[
+ 0.7686274509803922, 0.7803921568627451, 0.7803921568627451],
+Background->RGBColor[
+ 0.027450980392156862`, 0.1411764705882353, 0.17254901960784313`],
+FrontEndVersion->"14.2 for Linux x86 (64-bit) (December 26, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"cfeb1fdd-d4d3-47df-b2f5-6fd933b68178"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[422, 15, 236, 5, 23, "Print",ExpressionUUID->"07e10ad8-df87-448e-bd81-8a8e63dd89ec"],
+Cell[661, 22, 229, 5, 23, "Print",ExpressionUUID->"0fdabcdf-80cd-47f1-8173-0eff69573a81"]
+}, Open  ]]
+}
+]
+*)
+

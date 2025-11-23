@@ -14,13 +14,20 @@ import asyncio
 import os
 import sys
 import logging
+import json
+import uuid
+import tty
+import termios
+import argparse
+import tempfile
+import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import deque
 
 # Load environment
-load_dotenv("AI/config/.env")
+load_dotenv("config/.env")
 
 # Add AI directory to path for local imports
 ai_dir = Path(__file__).parent
@@ -43,18 +50,223 @@ RESET = '\033[0m'
 CLEAR_SCREEN = '\033[2J'
 MOVE_CURSOR = '\033[{};{}H'  # row, col
 CLEAR_TO_END = '\033[0J'
+GREEN_BOLD = '\033[1;32m'
+LIGHT_BLUE_BOLD = '\033[1;96m'
+PALE_RED_BOLD = '\033[1;91m'
+
+
+def list_sessions(sessions_dir: Path) -> list:
+    """List available sessions sorted by modification time."""
+    sessions = []
+    for f in sessions_dir.glob("*.jsonl"):
+        # Get first and last user message for preview
+        first_msg = ""
+        last_msg = ""
+        msg_count = 0
+        with open(f) as fh:
+            for line in fh:
+                entry = json.loads(line)
+                if entry["type"] == "user":
+                    if not first_msg:
+                        first_msg = entry["content"][:50]
+                    last_msg = entry["content"][:50]
+                    msg_count += 1
+
+        sessions.append({
+            "path": f,
+            "mtime": f.stat().st_mtime,
+            "first_msg": first_msg,
+            "last_msg": last_msg,
+            "msg_count": msg_count
+        })
+
+    return sorted(sessions, key=lambda x: x["mtime"], reverse=True)
+
+
+def select_session(sessions_dir: Path) -> Path:
+    """Interactive session selection."""
+    sessions = list_sessions(sessions_dir)
+
+    if not sessions:
+        print("No sessions found.")
+        return None
+
+    print("\nAvailable sessions:\n")
+    for i, s in enumerate(sessions[:20]):  # Show last 20
+        ts = datetime.fromtimestamp(s["mtime"]).strftime("%Y-%m-%d %H:%M")
+        preview = s["first_msg"] if s["first_msg"] else "(empty)"
+        print(f"  {i+1:2d}. [{ts}] ({s['msg_count']} msgs) {preview}")
+
+    print()
+    try:
+        choice = input("Select session (number): ").strip()
+        idx = int(choice) - 1
+        if 0 <= idx < len(sessions):
+            return sessions[idx]["path"]
+    except (ValueError, KeyboardInterrupt):
+        pass
+
+    return None
+
+
+def extract_wl_commands(session_path: Path) -> list:
+    """Extract Wolfram Language commands from session for kernel replay."""
+    commands = []
+    with open(session_path) as f:
+        for line in f:
+            entry = json.loads(line)
+            if entry["type"] == "tool_call":
+                name = entry["content"]
+                args = entry.get("arguments", {})
+
+                if name == "evaluate_wolfram":
+                    commands.append(args.get("code", ""))
+                elif name == "define_canonical_field":
+                    field = args.get("field_expr", "")
+                    opts = []
+                    if args.get("field_symbol"):
+                        opts.append(f'FieldSymbol->"{args["field_symbol"]}"')
+                    if args.get("momentum_symbol"):
+                        opts.append(f'MomentumSymbol->"{args["momentum_symbol"]}"')
+                    opts_str = ", " + ", ".join(opts) if opts else ""
+                    commands.append(f"DefCanonicalField[{field}{opts_str}]")
+                elif name == "poisson_bracket":
+                    op1 = args.get("operator1", "")
+                    op2 = args.get("operator2", "")
+                    commands.append(f"PoissonBracket[{op1}, {op2}]")
+    return commands
+
+
+def load_session_history(session_path: Path) -> list:
+    """Load conversation history from session file.
+
+    Uses Responses API format for function calls:
+    - {"type": "function_call", "call_id": "...", "name": "...", "arguments": "..."}
+    - {"type": "function_call_output", "call_id": "...", "output": "..."}
+    """
+    history = []
+    call_counter = 0
+    pending_call_ids = []  # Track call IDs waiting for results
+
+    with open(session_path) as f:
+        for line in f:
+            entry = json.loads(line)
+
+            if entry["type"] == "user":
+                history.append({"role": "user", "content": entry["content"]})
+
+            elif entry["type"] == "tool_call":
+                call_id = f"call_{call_counter}"
+                call_counter += 1
+                pending_call_ids.append(call_id)
+                history.append({
+                    "type": "function_call",
+                    "call_id": call_id,
+                    "name": entry["content"],
+                    "arguments": json.dumps(entry.get("arguments", {})),
+                    "status": "completed"
+                })
+
+            elif entry["type"] == "tool_result":
+                # Match with pending call (FIFO order)
+                call_id = pending_call_ids.pop(0) if pending_call_ids else f"call_{call_counter}"
+                history.append({
+                    "type": "function_call_output",
+                    "call_id": call_id,
+                    "output": entry.get("result", "")
+                })
+
+            elif entry["type"] == "assistant":
+                history.append({"role": "assistant", "content": entry["content"]})
+
+    return history
+
+
+def load_session_for_display(session_path: Path) -> list:
+    """Load session with tool calls for display purposes."""
+    display_history = []
+    pending_tool_calls = []
+
+    with open(session_path) as f:
+        for line in f:
+            entry = json.loads(line)
+
+            if entry["type"] == "user":
+                # Flush pending tool calls
+                if pending_tool_calls:
+                    display_history.append({"role": "assistant", "tool_calls": pending_tool_calls})
+                    pending_tool_calls = []
+                display_history.append({"role": "user", "content": entry["content"]})
+
+            elif entry["type"] == "tool_call":
+                pending_tool_calls.append({
+                    "function": {
+                        "name": entry["content"],
+                        "arguments": json.dumps(entry.get("arguments", {}))
+                    }
+                })
+
+            elif entry["type"] == "assistant":
+                if pending_tool_calls:
+                    display_history.append({"role": "assistant", "tool_calls": pending_tool_calls})
+                    pending_tool_calls = []
+                display_history.append({"role": "assistant", "content": entry["content"]})
+
+    return display_history
+
+
+class SessionLogger:
+    """Logs conversation to JSONL file."""
+
+    def __init__(self, sessions_dir: Path, session_id: str = None):
+        self.sessions_dir = sessions_dir
+        self.sessions_dir.mkdir(exist_ok=True)
+        self.session_id = session_id or str(uuid.uuid4())
+        self.log_file = self.sessions_dir / f"{self.session_id}.jsonl"
+        self.file_handle = open(self.log_file, 'a')
+
+    def log(self, entry_type: str, content: str, **kwargs):
+        """Log an entry to the session file."""
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "type": entry_type,
+            "content": content,
+            **kwargs
+        }
+        self.file_handle.write(json.dumps(entry) + "\n")
+        self.file_handle.flush()
+
+    def log_user(self, message: str):
+        self.log("user", message)
+
+    def log_assistant(self, message: str):
+        self.log("assistant", message)
+
+    def log_tool_call(self, tool_name: str, arguments: dict):
+        self.log("tool_call", tool_name, arguments=arguments)
+
+    def log_tool_result(self, tool_name: str, result: str):
+        self.log("tool_result", tool_name, result=result)
+
+    def close(self):
+        self.file_handle.close()
 
 
 class SplitPaneDisplay:
     """Manages split-pane terminal display."""
 
-    def __init__(self, term_height=40, split_ratio=0.65):
+    def __init__(self, term_height=40, term_width=120, split_ratio=0.65):
         self.term_height = term_height
+        self.term_width = term_width
         self.split_row = int(term_height * split_ratio)
 
-        # Buffers for each pane
-        self.log_buffer = deque(maxlen=self.split_row - 2)
-        self.conv_buffer = deque(maxlen=term_height - self.split_row - 3)
+        # Buffers for each pane - use larger maxlen for scrollback
+        self.log_buffer = deque(maxlen=500)
+        self.conv_buffer = deque(maxlen=500)
+
+        # Scroll offset for conversation pane (0 = showing most recent)
+        self.conv_scroll_offset = 0
+        self.conv_visible_lines = term_height - self.split_row - 3
 
     def init_display(self):
         """Initialize the split display."""
@@ -64,7 +276,7 @@ class SplitPaneDisplay:
     def draw_divider(self):
         """Draw horizontal divider between panes."""
         print(MOVE_CURSOR.format(self.split_row, 1), end='')
-        print("=" * 120, end='', flush=True)
+        print("=" * self.term_width, end='', flush=True)
 
     def add_log(self, text):
         """Add text to upper (log) pane."""
@@ -74,25 +286,45 @@ class SplitPaneDisplay:
 
     def add_conv(self, text):
         """Add text to lower (conversation) pane."""
-        # Wrap long lines to fit within terminal width
-        max_width = 118  # Leave some margin
-        if len(text) > max_width:
-            # Split into multiple lines
-            words = text.split()
-            current_line = ""
-            for word in words:
-                if len(current_line) + len(word) + 1 <= max_width:
-                    current_line += word + " "
-                else:
-                    if current_line:
-                        self.conv_buffer.append(current_line.rstrip())
-                    current_line = word + " "
-            if current_line:
-                self.conv_buffer.append(current_line.rstrip())
-        else:
-            self.conv_buffer.append(text)
+        max_width = self.term_width - 2  # Leave some margin
+
+        # First split on newlines, then word-wrap each line
+        for line in text.split('\n'):
+            if len(line) > max_width:
+                # Split into multiple lines
+                words = line.split()
+                current_line = ""
+                for word in words:
+                    if len(current_line) + len(word) + 1 <= max_width:
+                        current_line += word + " "
+                    else:
+                        if current_line:
+                            self.conv_buffer.append(current_line.rstrip())
+                        current_line = word + " "
+                if current_line:
+                    self.conv_buffer.append(current_line.rstrip())
+            else:
+                self.conv_buffer.append(line)
+
+        # Reset scroll to bottom when new content added
+        self.conv_scroll_offset = 0
         self.redraw_conv_pane()
         self.restore_cursor_to_input()
+
+    def scroll_up(self):
+        """Scroll conversation pane up (view older content)."""
+        max_scroll = max(0, len(self.conv_buffer) - self.conv_visible_lines)
+        if self.conv_scroll_offset < max_scroll:
+            self.conv_scroll_offset += 1
+            self.redraw_conv_pane()
+            self.restore_cursor_to_input()
+
+    def scroll_down(self):
+        """Scroll conversation pane down (view newer content)."""
+        if self.conv_scroll_offset > 0:
+            self.conv_scroll_offset -= 1
+            self.redraw_conv_pane()
+            self.restore_cursor_to_input()
 
     def restore_cursor_to_input(self):
         """Restore cursor to input row."""
@@ -103,14 +335,17 @@ class SplitPaneDisplay:
         # Clear upper pane
         for i in range(self.split_row - 1):
             print(MOVE_CURSOR.format(i + 1, 1), end='')
-            print(' ' * 120, end='')
+            print(' ' * self.term_width, end='')
 
         # Draw log content
         for i, line in enumerate(self.log_buffer):
             if i >= self.split_row - 1:
                 break
             print(MOVE_CURSOR.format(i + 1, 1), end='')
-            print(line[:120], end='', flush=True)
+            print(line[:self.term_width], end='', flush=True)
+
+        # Redraw divider to ensure separation
+        self.draw_divider()
 
     def redraw_conv_pane(self):
         """Redraw entire lower pane."""
@@ -120,15 +355,31 @@ class SplitPaneDisplay:
         for i in range(self.term_height - self.split_row - 1):
             row = start_row + i
             print(MOVE_CURSOR.format(row, 1), end='')
-            print(' ' * 120, end='')
+            print(' ' * self.term_width, end='')
+
+        # Calculate which lines to show based on scroll offset
+        buffer_list = list(self.conv_buffer)
+        total_lines = len(buffer_list)
+
+        if total_lines <= self.conv_visible_lines:
+            # All content fits, show everything
+            visible_lines = buffer_list
+        else:
+            # Calculate start index based on scroll offset
+            end_idx = total_lines - self.conv_scroll_offset
+            start_idx = max(0, end_idx - self.conv_visible_lines)
+            visible_lines = buffer_list[start_idx:end_idx]
 
         # Draw conversation content
-        for i, line in enumerate(self.conv_buffer):
+        for i, line in enumerate(visible_lines):
             row = start_row + i
             if row >= self.term_height:
                 break
             print(MOVE_CURSOR.format(row, 1), end='')
-            print(line[:120], end='', flush=True)
+            print(line[:self.term_width], end='', flush=True)
+
+        # Redraw divider to ensure separation
+        self.draw_divider()
 
     def get_input_row(self):
         """Get row number for input prompt."""
@@ -150,18 +401,198 @@ class LogCapture(logging.Handler):
             self.handleError(record)
 
 
-async def interactive_loop(agent, display, mcp_server):
+def select_md_file_with_netrw(catalogue_dir: Path) -> str:
+    """Open vim netrw to select a .md file and return its contents."""
+    # Create temp file for vim to write selected path
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        temp_path = f.name
+
+    # Create a vim script file
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.vim', delete=False) as f:
+        vim_script_path = f.name
+        f.write(f'''
+let g:netrw_banner = 0
+let g:netrw_liststyle = 3
+let g:powerline_loaded = 1
+
+function! SelectAndQuit()
+    let l:file = expand('%:p')
+    if l:file != '' && filereadable(l:file)
+        call writefile([l:file], '{temp_path}')
+        qa!
+    endif
+endfunction
+
+autocmd BufReadPost *.md call SelectAndQuit()
+''')
+
+    try:
+        # Run vim with netrw
+        subprocess.run([
+            'vim',
+            '-S', vim_script_path,
+            str(catalogue_dir)
+        ], check=False)
+
+        os.unlink(vim_script_path)
+
+        # Read selected file path
+        if os.path.exists(temp_path):
+            with open(temp_path) as f:
+                selected_path = f.read().strip()
+            os.unlink(temp_path)
+
+            if selected_path and os.path.exists(selected_path):
+                with open(selected_path) as f:
+                    return f.read()
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        if os.path.exists(vim_script_path):
+            os.unlink(vim_script_path)
+
+    return None
+
+
+def get_input_with_scroll(prompt, display, catalogue_dir=None):
+    """Get user input while allowing arrow keys to scroll conversation pane."""
+    print(prompt, end='', flush=True)
+
+    # Save terminal settings
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+
+    input_buffer = []
+    cursor_pos = 0
+
+    try:
+        tty.setraw(fd)
+
+        while True:
+            char = sys.stdin.read(1)
+
+            if char == '\r' or char == '\n':  # Enter
+                # Restore terminal and return input
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                print()  # Newline after input
+                return ''.join(input_buffer)
+
+            elif char == '\x03':  # Ctrl-C
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                raise KeyboardInterrupt
+
+            elif char == '\x04':  # Ctrl-D
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                raise EOFError
+
+            elif char == '\x06':  # Ctrl-F - file picker
+                if catalogue_dir:
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                    content = select_md_file_with_netrw(catalogue_dir)
+                    if content:
+                        return content
+                    # If cancelled, restore and continue
+                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+                    print(' ' * display.term_width, end='')
+                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+                    print(prompt + ''.join(input_buffer), end='', flush=True)
+                    tty.setraw(fd)
+
+            elif char == '\x1b':  # Escape sequence (arrow keys)
+                next1 = sys.stdin.read(1)
+                if next1 == '[':
+                    next2 = sys.stdin.read(1)
+                    if next2 == 'A':  # Up arrow
+                        display.scroll_up()
+                    elif next2 == 'B':  # Down arrow
+                        display.scroll_down()
+                    # Ignore left/right arrows for now
+
+            elif char == '\x7f' or char == '\x08':  # Backspace
+                if input_buffer and cursor_pos > 0:
+                    input_buffer.pop(cursor_pos - 1)
+                    cursor_pos -= 1
+                    # Redraw input line
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+                    print(' ' * display.term_width, end='')
+                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+                    print(prompt + ''.join(input_buffer), end='', flush=True)
+                    tty.setraw(fd)
+
+            elif char >= ' ' and char <= '~':  # Printable characters
+                input_buffer.insert(cursor_pos, char)
+                cursor_pos += 1
+                # Echo character
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                print(char, end='', flush=True)
+                tty.setraw(fd)
+
+    except Exception as e:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        raise
+
+
+async def interactive_loop(agent, display, mcp_server, session_logger, initial_history=None, display_history=None, catalogue_dir=None):
     """Custom interactive loop with split display."""
+
+    # Maintain conversation history
+    conversation_history = initial_history or []
+
+    # Track previous turn's tool calls for visibility hack
+    previous_tool_calls = []
+
+    # If restoring, show previous messages in display
+    # Use display_history (includes tool calls) for display, initial_history for agent
+    history_for_display = display_history or initial_history
+    if history_for_display:
+        display.add_conv(f"Restored {len(initial_history)} history entries")
+        display.add_conv("")
+        for msg in history_for_display:
+            if msg["role"] == "user":
+                display.add_conv(f"{GREEN_BOLD}> {msg['content']}{RESET}")
+            elif msg["role"] == "assistant":
+                if "tool_calls" in msg:
+                    # Show tool calls - match live format
+                    display.add_conv("")
+                    display.add_conv(f"{PALE_RED_BOLD}Wolfram Code:{RESET}")
+                    for tc in msg["tool_calls"]:
+                        func = tc["function"]
+                        args = json.loads(func["arguments"])
+                        # Format to match live conversation display
+                        if func["name"] == "evaluate_wolfram":
+                            code = args.get("code", "")
+                            display.add_conv(f"{PALE_RED_BOLD}  {code}{RESET}")
+                        elif func["name"] == "define_canonical_field":
+                            field = args.get("field_expr", "?")
+                            opts = []
+                            if args.get("field_symbol"):
+                                opts.append(f'FieldSymbol->"{args["field_symbol"]}"')
+                            if args.get("momentum_symbol"):
+                                opts.append(f'MomentumSymbol->"{args["momentum_symbol"]}"')
+                            opts_str = ", " + ", ".join(opts) if opts else ""
+                            display.add_conv(f"{PALE_RED_BOLD}  DefCanonicalField[{field}{opts_str}]{RESET}")
+                        elif func["name"] == "poisson_bracket":
+                            op1 = args.get("operator1", "?")
+                            op2 = args.get("operator2", "?")
+                            display.add_conv(f"{PALE_RED_BOLD}  PoissonBracket[{op1}, {op2}]{RESET}")
+                        else:
+                            display.add_conv(f"{PALE_RED_BOLD}  {func['name']}{RESET}")
+                    display.add_conv("")
+                elif "content" in msg:
+                    display.add_conv(f"{LIGHT_BLUE_BOLD}Hasdrubal: {msg['content']}{RESET}")
+                    display.add_conv("")
+            # Skip tool result messages in display (too verbose)
 
     while True:
         # Position cursor at input row
         print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
-        print(' ' * 120, end='')  # Clear line
+        print(' ' * display.term_width, end='')  # Clear line
         print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
 
-        # Get user input
+        # Get user input with arrow key scrolling
         try:
-            user_input = input("> ").strip()
+            user_input = get_input_with_scroll("> ", display, catalogue_dir).strip()
         except (EOFError, KeyboardInterrupt):
             break
 
@@ -172,10 +603,14 @@ async def interactive_loop(agent, display, mcp_server):
             continue
 
         # Add user prompt to conversation pane
-        display.add_conv(f"> {user_input}")
+        display.add_conv(f"{GREEN_BOLD}> {user_input}{RESET}")
 
-        # Track Wolfram code for this turn
+        # Log user input
+        session_logger.log_user(user_input)
+
+        # Track Wolfram code for this turn (code + result pairs)
         wl_codes = []
+        tool_call_records = []  # For visibility hack: stores (code, result) tuples
 
         # Wrap call_tool to capture WL code
         original_call_tool = mcp_server.call_tool
@@ -211,40 +646,88 @@ async def interactive_loop(agent, display, mcp_server):
             if wl_code and tool_name in ["evaluate_wolfram", "define_canonical_field", "poisson_bracket"]:
                 wl_codes.append(wl_code)
 
+            # Log tool call
+            session_logger.log_tool_call(tool_name, arguments)
+
             # Execute
             result = await original_call_tool(tool_name, arguments)
 
-            # Log result
+            # Log result and store for visibility hack
+            result_text = ""
             if hasattr(result, 'content') and result.content:
                 result_text = result.content[0].text
-                if len(result_text) > 150:
-                    result_text = result_text[:150] + "..."
-                display.add_log(f"{GRAY}[{timestamp}]{RESET} RESULT: {result_text}")
+                # Log full result
+                session_logger.log_tool_result(tool_name, result_text)
+                # Truncate for display
+                display_text = result_text[:150] + "..." if len(result_text) > 150 else result_text
+                display.add_log(f"{GRAY}[{timestamp}]{RESET} RESULT: {display_text}")
+
+            # Store for visibility hack (full result, not truncated)
+            if wl_code and tool_name in ["evaluate_wolfram", "define_canonical_field", "poisson_bracket"]:
+                tool_call_records.append((wl_code, result_text))
 
             return result
 
         mcp_server.call_tool = capture_call_tool
 
-        # Run agent
+        # Run agent with conversation history
         try:
-            result = await Runner.run(agent, user_input)
+            # Build user message with visibility hack preamble if needed
+            if previous_tool_calls:
+                # Format previous tool calls as preamble
+                preamble_lines = [
+                    "[SYSTEM NOTE: You are running through OpenAI Agents SDK which has a known bug where tool calls may not be visible to the model. In case you cannot see what you did in the previous turn, here is a copy of your tool calls and their results:",
+                    ""
+                ]
+                for i, (code, result_text) in enumerate(previous_tool_calls, 1):
+                    preamble_lines.append(f"Tool call {i}: {code}")
+                    # Truncate very long results
+                    if len(result_text) > 500:
+                        result_text = result_text[:500] + "... (truncated)"
+                    preamble_lines.append(f"Result: {result_text}")
+                    preamble_lines.append("")
+
+                preamble_lines.append("If you can already see these tool calls above, disregard this note.]")
+                preamble_lines.append("")
+                preamble_lines.append("User message:")
+                preamble = "\n".join(preamble_lines)
+
+                augmented_input = f"{preamble}\n{user_input}"
+            else:
+                augmented_input = user_input
+
+            # Add user message to history (with preamble if applicable)
+            conversation_history.append({"role": "user", "content": augmented_input})
+
+            result = await Runner.run(agent, conversation_history)
 
             # Show WL codes in conversation pane
             if wl_codes:
                 display.add_conv("")
-                display.add_conv("Wolfram Code:")
+                display.add_conv(f"{PALE_RED_BOLD}Wolfram Code:{RESET}")
                 for code in wl_codes:
-                    display.add_conv(f"  {code}")
+                    display.add_conv(f"{PALE_RED_BOLD}  {code}{RESET}")
                 display.add_conv("")
 
             # Show agent response in conversation pane
             response = result.final_output
-            display.add_conv(f"Hasdrubal: {response}")
+            display.add_conv(f"{LIGHT_BLUE_BOLD}Hasdrubal: {response}{RESET}")
             display.add_conv("")
+
+            # Log assistant response
+            session_logger.log_assistant(response)
+
+            # Add assistant response to history
+            conversation_history.append({"role": "assistant", "content": response})
+
+            # Update previous_tool_calls for next turn's visibility hack
+            previous_tool_calls = tool_call_records
 
         except Exception as e:
             display.add_conv(f"Error: {str(e)}")
             display.add_log(f"ERROR: {str(e)}")
+            # Clear previous tool calls on error
+            previous_tool_calls = []
 
         # Restore original call_tool
         mcp_server.call_tool = original_call_tool
@@ -253,22 +736,55 @@ async def interactive_loop(agent, display, mcp_server):
 async def main():
     """Start split-pane REPL with Hasdrubal."""
 
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Hasdrubal Interactive REPL")
+    parser.add_argument("--restore", action="store_true", help="Restore a previous session")
+    args = parser.parse_args()
+
     # Check API key
     if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "your-api-key-here":
-        print("Please set OPENAI_API_KEY in AI/config/.env")
+        print("Please set OPENAI_API_KEY in config/.env")
         print("Get your key from: https://platform.openai.com/api-keys")
         return
 
-    project_root = ai_dir.parent
+    project_root = ai_dir  # Hasdrubal is the project root
+    sessions_dir = project_root / "sessions"
+
+    # Handle session restore
+    initial_history = []
+    restore_session_id = None
+
+    # Commands to replay for kernel state
+    wl_commands = []
+    display_history = []
+
+    if args.restore:
+        selected = select_session(sessions_dir)
+        if selected:
+            initial_history = load_session_history(selected)
+            display_history = load_session_for_display(selected)
+            wl_commands = extract_wl_commands(selected)
+            restore_session_id = selected.stem  # Use same session ID
+            print(f"\nRestoring session: {restore_session_id}")
+            print(f"Loaded {len(initial_history)} messages, {len(wl_commands)} WL commands")
+        else:
+            print("No session selected, starting fresh.")
+            return
 
     # Get terminal size
     try:
-        term_height = os.get_terminal_size().lines
+        term_size = os.get_terminal_size()
+        term_height = term_size.lines
+        term_width = term_size.columns
     except:
         term_height = 40
+        term_width = 120
 
     # Create display manager
-    display = SplitPaneDisplay(term_height=term_height, split_ratio=0.65)
+    display = SplitPaneDisplay(term_height=term_height, term_width=term_width, split_ratio=0.65)
+
+    # Create session logger (reuse ID if restoring)
+    session_logger = SessionLogger(sessions_dir, restore_session_id)
 
     # Configure logging to go to upper pane
     log_handler = LogCapture(display)
@@ -295,7 +811,7 @@ async def main():
         name="Hamilcar MCP Server",
         params={
             "command": "python",
-            "args": [str(project_root / "AI" / "mcp_server.py")],
+            "args": [str(project_root / "mcp_server.py")],
             "env": None
         },
         client_session_timeout_seconds=60
@@ -309,15 +825,32 @@ async def main():
         display.add_conv(f"Agent: {agent.name}")
         display.add_conv(f"Model: {agent.model}")
         display.add_conv("")
+
+        # Replay WL commands to restore kernel state
+        if wl_commands:
+            display.add_conv(f"Restoring kernel state ({len(wl_commands)} commands)...")
+            for i, cmd in enumerate(wl_commands):
+                try:
+                    await mcp_server.call_tool("evaluate_wolfram", {"code": cmd})
+                    # Update progress every few commands
+                    if (i + 1) % 3 == 0 or i == len(wl_commands) - 1:
+                        display.add_log(f"{GRAY}Restored {i+1}/{len(wl_commands)} commands{RESET}")
+                except Exception as e:
+                    display.add_log(f"Warning: Failed to restore command: {str(e)[:50]}")
+            display.add_conv("Kernel state restored")
+            display.add_conv("")
+
         display.add_conv("Ready! Type 'quit' or 'exit' to stop.")
         display.add_conv("")
 
         # Run interactive loop
-        await interactive_loop(agent, display, mcp_server)
+        catalogue_dir = project_root / "devel_catalogue"
+        await interactive_loop(agent, display, mcp_server, session_logger, initial_history, display_history, catalogue_dir)
 
-        # Cleanup display
+        # Cleanup
+        session_logger.close()
         print(MOVE_CURSOR.format(term_height, 1), end='')
-        print("\n\nGoodbye!\n")
+        print(f"\n\nGoodbye! Session logged to: {session_logger.log_file}\n")
 
 
 if __name__ == "__main__":

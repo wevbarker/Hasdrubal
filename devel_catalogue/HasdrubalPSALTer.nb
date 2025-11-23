@@ -1,19 +1,12 @@
-(* Content-type: application/vnd.wolfram.mathematica *)
-
-(*** Wolfram Notebook File ***)
-(* http://www.wolfram.com/nb *)
-
-(* CreatedBy='Wolfram 14.2' *)
-
 (*CacheID: 234*)
 (* Internal cache information:
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
-NotebookDataPosition[       154,          7]
+NotebookDataPosition[         0,          0]
 NotebookDataLength[      1009,         39]
-NotebookOptionsPosition[       557,         21]
-NotebookOutlinePosition[      1145,         42]
-CellTagsIndexPosition[      1102,         39]
+NotebookOptionsPosition[       403,         14]
+NotebookOutlinePosition[       991,         35]
+CellTagsIndexPosition[       948,         32]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -28,7 +21,7 @@ Background->RGBColor[
  0.027450980392156862`, 0.1411764705882353, 0.17254901960784313`],
 FrontEndVersion->"14.2 for Linux x86 (64-bit) (December 26, 2024)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"27e6c9f7-5825-4e24-b90b-c2eb8ff6ca01"
+ExpressionUUID->"b701c9c5-550a-4d7a-9d76-21887adb362a"
 ]
 (* End of Notebook Content *)
 

@@ -98,7 +98,7 @@ SolveVelocities[InputExpr_]:=Module[{Expr=InputExpr,ConstantSymbols,
 	OtherVariables//=DeleteDuplicates;
 	OtherVariables//=Complement[#,$VelocitiesUp]&;
 	OtherVariables//=DeleteCases[#,_?ConstantSymbolQ]&;
-	(*OtherVariables//DisplayExpression;*)
+	(**)OtherVariables//DisplayExpression;(**)
 
 	VelocitySolutions=Expr;
 	VelocitySolutions//=DeleteCases[#,Alternatives@@(Rule[#, _]&/@OtherVariables)]&;
