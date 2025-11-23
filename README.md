@@ -1,3 +1,5 @@
+<img src="Logos/GitHubLogo.png" width="1000">
+
 # Hasdrubal
 
 AI assistant for canonical field theory computations via the Hamilcar Mathematica package.
