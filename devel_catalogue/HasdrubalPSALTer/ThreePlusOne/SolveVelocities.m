@@ -52,6 +52,13 @@ Scalify[InputExpr_]:=Module[{Expr=InputExpr},
 	Expr//=Scalar];
 Expr];
 
+ListOfConstants[InputExpr_]:=Module[{ConstantSymbols=InputExpr},
+	ConstantSymbols//=Variables;
+	ConstantSymbols//=Flatten;
+	ConstantSymbols//=DeleteDuplicates;
+	ConstantSymbols//=Cases[#,_?ConstantSymbolQ]&;
+ConstantSymbols];
+
 SolveVelocities[InputExpr_]:=Module[{Expr=InputExpr,ConstantSymbols,
 	Constraints,VelocitySolutions,OtherVariables},
 
@@ -66,26 +73,8 @@ SolveVelocities[InputExpr_]:=Module[{Expr=InputExpr,ConstantSymbols,
 
 	MadeOfConstantsQ[expr_]:=And[!(expr===0),SubsetQ[ConstantSymbols,Variables[expr]]];
 
-	(*
-	Expr//=Reduce[#,$VelocitiesUp]&;
-	Expr//=LogicalExpand;
-	Expr//Print;
-	Expr//=(#/.{Equal[_?MadeOfConstantsQ,_]->False})&;
-	Expr//=(#/.{(_?MadeOfConstantsQ==_)->False})&;
-	Expr//Print;
-	Expr//=(#/.{Equal[_,_?MadeOfConstantsQ]->False})&;
-	Expr//=(#/.{(_==_?MadeOfConstantsQ)->False})&;
-	Expr//Print;
-	Expr//=(#/.{NotEqual[_?MadeOfConstantsQ,_]->True})&;
-	Expr//=(#/.{(_?MadeOfConstantsQ!=_)->True})&;
-	VelocityQ[var_]:=MemberQ[$VelocitiesUp,var];
-	Expr//=(#/.{Equal[LHS_,RHS_?VelocityQ]->Equal[RHS,LHS]})&;
-	Expr//=(#/.Equal->Rule)&;
-	Expr//=(#/.And->List)&;
-	(**)Expr//DisplayExpression;(**)
-	*)
-
 	Expr//=GetBestSolution[#,$ConjugateMomenta,$VelocitiesUp]&;
+	Expr//DisplayExpression;
 
 	Constraints=Expr;
 	Constraints//=DeleteCases[#,Alternatives@@(Rule[#, _]&/@$VelocitiesUp)]&;
@@ -98,7 +87,7 @@ SolveVelocities[InputExpr_]:=Module[{Expr=InputExpr,ConstantSymbols,
 	OtherVariables//=DeleteDuplicates;
 	OtherVariables//=Complement[#,$VelocitiesUp]&;
 	OtherVariables//=DeleteCases[#,_?ConstantSymbolQ]&;
-	(**)OtherVariables//DisplayExpression;(**)
+	(*OtherVariables//DisplayExpression;*)
 
 	VelocitySolutions=Expr;
 	VelocitySolutions//=DeleteCases[#,Alternatives@@(Rule[#, _]&/@OtherVariables)]&;

@@ -3,25 +3,25 @@ This prompt provides all the information needed to implement the Dirac-Bergman H
 ```
 
 ```mathematica
--(SquareMassCoupling*VectorFieldRank10p[]^2) + ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] + SquareMassCoupling*VectorFieldRank11m[-a]*VectorFieldRank11m[a] + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2
+-1/8*(ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[a, b])/FirstKineticCoupling + ConjugateMomentumTwoFormFieldRank2AntisymmetricPerp1m[-a]*TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a] + 2*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*CD[b][TwoFormFieldRank2AntisymmetricPerp1m[a]] + 4*FirstKineticCoupling*CD[-b][TwoFormFieldRank2AntisymmetricPara1p[-a, -c]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]] - 2*FirstKineticCoupling*CD[-c][TwoFormFieldRank2AntisymmetricPara1p[-a, -b]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]]
 ```
 
 Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above.
 
 ```mathematica
-{VectorFieldRank10p[], VectorFieldRank11m[-a]}
+{TwoFormFieldRank2AntisymmetricPara1p[-a, -b], TwoFormFieldRank2AntisymmetricPerp1m[-a]}
 ```
 
 Here is a Wolfram Language list of the conjugate momenta corresponding to the canonical fields above. Some of these momenta may not appear in the total Hamiltonian above.
 
 ```mathematica
-{ConjugateMomentumVectorFieldRank10p[], ConjugateMomentumVectorFieldRank11m[a]}
+{ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[a, b], ConjugateMomentumTwoFormFieldRank2AntisymmetricPerp1m[a]}
 ```
 
 Here is a Wolfram Language list of the Lagrange multiplier fields introduced to enforce the primary constraints in the Hamiltonian formulation. Some of these multipliers may not appear in the total Hamiltonian above.
 
 ```mathematica
-{VectorFieldRank10pLagrangeMultiplier[], VectorFieldRank11mLagrangeMultiplier[-a]}
+{TwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a, -b], TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]}
 ```
 
 This is the end of the provided information; you should now proceed with the algorithm.

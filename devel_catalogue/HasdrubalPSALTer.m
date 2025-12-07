@@ -12,7 +12,10 @@ Get@FileNameJoin[{"HasdrubalPSALTer","TimeD.m"}];
 Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne.m"}];
 
 (*Get@FileNameJoin[{"HasdrubalPSALTer","Catalogue.m"}];*)
-(**)Get@FileNameJoin[{"HasdrubalPSALTer","MaxwellTheory.m"}];(**)
+(*Get@FileNameJoin[{"HasdrubalPSALTer","MaxwellTheory.m"}];*)
 (*Get@FileNameJoin[{"HasdrubalPSALTer","ProcaTheory.m"}];*)
+(*Get@FileNameJoin[{"HasdrubalPSALTer","MarzoTheory.m"}];*)
+Get@FileNameJoin[{"HasdrubalPSALTer","MassiveMarzoTheory.m"}];
+(*Get@FileNameJoin[{"HasdrubalPSALTer","KalbRamondTheory.m"}];*)
 
 Quit[];

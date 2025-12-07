@@ -780,8 +780,8 @@ async def main():
         term_height = 40
         term_width = 120
 
-    # Create display manager
-    display = SplitPaneDisplay(term_height=term_height, term_width=term_width, split_ratio=0.65)
+    # Create display manager (split_ratio=0.25 means logs take top 1/4, conversation takes bottom 3/4)
+    display = SplitPaneDisplay(term_height=term_height, term_width=term_width, split_ratio=0.25)
 
     # Create session logger (reuse ID if restoring)
     session_logger = SessionLogger(sessions_dir, restore_session_id)

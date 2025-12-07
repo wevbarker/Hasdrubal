@@ -35,10 +35,16 @@ PrepareAutomaticRule[InputHead_[InputInds___]]:=Module[{
 	$DerivativeRules//=Flatten;
 ];
 
-PrepareAutomaticRules[FieldName_]:=Module[{Class,Expr},
-	Class=FieldName;
-	Class//=xAct`PSALTer`Private`FieldAssociation;
-	Expr=Flatten@Values@(Flatten/@(Values/@(Values/@(Class@xAct`PSALTer`Private`FieldSpinParityTensorHeads))));
+Options[PrepareAutomaticRules]={DeclaredFieldSpinParityTensorHeads-><||>};
+PrepareAutomaticRules[FieldName_,OptionsPattern[]]:=Module[{Class,Expr},
+	If[Length@OptionValue@DeclaredFieldSpinParityTensorHeads>0,
+		Expr=OptionValue@DeclaredFieldSpinParityTensorHeads;
+		Expr//=(#@FieldName)&;
+	,
+		Class=FieldName;
+		Class//=xAct`PSALTer`Private`FieldAssociation;
+		Expr=Flatten@Values@(Flatten/@(Values/@(Values/@(Class@xAct`PSALTer`Private`FieldSpinParityTensorHeads))));
+	];
 	Expr//=((FromIndexFree@ToIndexFree@#)&/@#)&;
 	Do[
 		PrepareAutomaticRule[SpinParityPart],

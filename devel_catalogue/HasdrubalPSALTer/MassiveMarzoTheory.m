@@ -1,9 +1,10 @@
-(*===============*)
-(*  ProcaTheory  *)
-(*===============*)
+(*======================*)
+(*  MassiveMarzoTheory  *)
+(*======================*)
 
 Comment@"Set up the coupling coefficients.";
 Code[DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"]];
+Code[DefConstantSymbol[SquareMassCoupling,PrintAs->"\[Beta]"]];
 
 Comment@"Set up a vector field.";
 Code[DefField[VectorField[a],PrintAs->"\[ScriptCapitalA]",
@@ -12,8 +13,8 @@ Expr=VectorField[a];
 Expr//DisplayExpression;
 
 Comment@"We construct a Lagrangian density.";
-LagrangianAnsatz=-(FirstKineticCoupling/4)*(CD[a]@VectorField[b]-CD[b]@VectorField[a])*(CD[-a]@VectorField[-b]-CD[-b]@VectorField[-a])+SquareMassCoupling*VectorField[-a]*VectorField[a];
+LagrangianAnsatz=-(FirstKineticCoupling/4)*CD[-a]@VectorField[a]*CD[-b]@VectorField[b]-(SquareMassCoupling/2)*VectorField[-a]*VectorField[a];
 LagrangianAnsatz//DisplayExpression;
 
 Comment@"Perform automated processing.";
-ThreePlusOne[LagrangianAnsatz,"ProcaTheory"];
+ThreePlusOne[LagrangianAnsatz,"MassiveMarzoTheory"];

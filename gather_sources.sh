@@ -85,25 +85,17 @@ echo "" >> "$OUTPUT_FILE"
 # echo "" >> "$OUTPUT_FILE"
 GLAVAN_TOKENS=0
 
-# Section 3: project-dalet/ReproductionOfResults
-echo "## Processing project-dalet/ReproductionOfResults..."
-echo "" >> "$OUTPUT_FILE"
-echo "# Section 3: project-dalet/ReproductionOfResults Sources" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-
-DALET_OUTPUT="$TEMP_DIR/dalet.md"
-DALET_RESULT=$(code2prompt /home/barker/Documents/project-dalet/ReproductionOfResults \
-    --include "*.m" \
-    --exclude "*.mx" \
-    --output-file "$DALET_OUTPUT" \
-    --tokens "raw" 2>&1)
-
-DALET_TOKENS=$(echo "$DALET_RESULT" | grep -oP 'Token count: \K[0-9]+' | head -1 || echo "0")
-echo "   project-dalet/ReproductionOfResults: $DALET_TOKENS tokens"
-TOTAL_TOKENS=$((TOTAL_TOKENS + DALET_TOKENS))
-
-cat "$DALET_OUTPUT" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
+# Section 3: project-dalet/ReproductionOfResults (commented out)
+# echo "## Processing project-dalet/ReproductionOfResults..."
+# DALET_OUTPUT="$TEMP_DIR/dalet.md"
+# DALET_RESULT=$(code2prompt /home/barker/Documents/project-dalet/ReproductionOfResults \
+#     --include "*.m" \
+#     --exclude "*.mx" \
+#     --output-file "$DALET_OUTPUT" \
+#     --tokens "raw" 2>&1)
+# DALET_TOKENS=$(echo "$DALET_RESULT" | grep -oP 'Token count: \K[0-9]+' | head -1 || echo "0")
+# cat "$DALET_OUTPUT" >> "$OUTPUT_FILE"
+DALET_TOKENS=0
 
 # Section 4: Model Catalogue from devel_catalogue
 echo "## Processing Model Catalogue..."
@@ -115,27 +107,28 @@ echo "" >> "$OUTPUT_FILE"
 
 CATALOGUE_TOKENS=0
 
-# Find all starter .md files and pair with walkthroughs
+# Find all starter .md files that have accompanying walkthroughs
 for starter in /home/barker/Documents/Hasdrubal/devel_catalogue/*.md; do
     if [ -f "$starter" ]; then
         STARTER_NAME=$(basename "$starter")
         THEORY_NAME="${STARTER_NAME%.md}"
         WALKTHROUGH="/home/barker/Documents/Hasdrubal/devel_catalogue/${THEORY_NAME}Walkthrough.m"
 
-        # Include starter .md
-        echo "## $THEORY_NAME - Canonical Formulation" >> "$OUTPUT_FILE"
-        echo "" >> "$OUTPUT_FILE"
-        cat "$starter" >> "$OUTPUT_FILE"
-        echo "" >> "$OUTPUT_FILE"
-
-        # Count tokens (approximate from file size)
-        STARTER_SIZE=$(wc -c < "$starter")
-        STARTER_TOKENS=$((STARTER_SIZE / 4))
-        echo "   $STARTER_NAME: ~$STARTER_TOKENS tokens"
-        CATALOGUE_TOKENS=$((CATALOGUE_TOKENS + STARTER_TOKENS))
-
-        # Check for walkthrough
+        # Only include if walkthrough exists
         if [ -f "$WALKTHROUGH" ]; then
+            # Include starter .md
+            echo "## $THEORY_NAME - Canonical Formulation" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+            cat "$starter" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+
+            # Count tokens (approximate from file size)
+            STARTER_SIZE=$(wc -c < "$starter")
+            STARTER_TOKENS=$((STARTER_SIZE / 4))
+            echo "   $STARTER_NAME: ~$STARTER_TOKENS tokens"
+            CATALOGUE_TOKENS=$((CATALOGUE_TOKENS + STARTER_TOKENS))
+
+            # Include walkthrough
             WALKTHROUGH_NAME=$(basename "$WALKTHROUGH")
             WALKTHROUGH_OUTPUT="$TEMP_DIR/$WALKTHROUGH_NAME.md"
 
@@ -152,16 +145,12 @@ for starter in /home/barker/Documents/Hasdrubal/devel_catalogue/*.md; do
             echo "" >> "$OUTPUT_FILE"
             cat "$WALKTHROUGH_OUTPUT" >> "$OUTPUT_FILE"
             echo "" >> "$OUTPUT_FILE"
-        else
-            echo "## $THEORY_NAME - Constraint Analysis" >> "$OUTPUT_FILE"
-            echo "" >> "$OUTPUT_FILE"
-            echo "The application of the Dirac-Bergmann algorithm for $THEORY_NAME is left as an exercise. The user may request this analysis in the live session." >> "$OUTPUT_FILE"
-            echo "" >> "$OUTPUT_FILE"
-            echo "   (No walkthrough for $THEORY_NAME)"
-        fi
 
-        echo "----------------------------------------" >> "$OUTPUT_FILE"
-        echo "" >> "$OUTPUT_FILE"
+            echo "----------------------------------------" >> "$OUTPUT_FILE"
+            echo "" >> "$OUTPUT_FILE"
+        else
+            echo "   (Skipping $THEORY_NAME - no walkthrough)"
+        fi
     fi
 done
 

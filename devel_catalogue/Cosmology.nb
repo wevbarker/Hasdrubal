@@ -1,0 +1,89 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[      2691,         81]
+NotebookOptionsPosition[      1840,         57]
+NotebookOutlinePosition[      2428,         78]
+CellTagsIndexPosition[      2385,         75]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData["\<\"------------------------------------------------------------\
+\"\>"], "Print",
+ CellChangeTimes->{3.973107840795586*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"1cfed054-7680-4327-bb5b-3a69ebe00816"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Package xAct`xPerm`  version \"\>", 
+   "\[InvisibleSpace]", "\<\"1.2.3\"\>", "\[InvisibleSpace]", "\<\", \"\>", "\[InvisibleSpace]", 
+   RowBox[{"{", 
+    RowBox[{"2015", ",", "8", ",", "23"}], "}"}]}],
+  SequenceForm["Package xAct`xPerm`  version ", "1.2.3", ", ", {2015, 8, 23}],
+  
+  Editable->False]], "Print",
+ CellChangeTimes->{3.973107840796752*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"079c894e-2b37-4aaa-b866-2574bbf1cafa"],
+
+Cell[BoxData["\<\"CopyRight (C) 2003-2020, Jose M. Martin-Garcia, under the \
+General Public License.\"\>"], "Print",
+ CellChangeTimes->{3.973107840798051*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"f7f6158a-fe54-4b18-8794-081f3d9b483d"],
+
+Cell[BoxData["\<\"Connecting to external linux executable...\"\>"], "Print",
+ CellChangeTimes->{3.9731078408595037`*^9},
+ CellLabel->
+  "During evaluation of \
+In[1]:=",ExpressionUUID->"dbc2cf40-a112-465b-a7a4-d113efc5c3aa"]
+}, Open  ]]
+},
+WindowSize->{1677, 1003.5},
+WindowMargins->{{0, Automatic}, {0, Automatic}},
+WindowElements->{},
+FontColor->RGBColor[
+ 0.7686274509803922, 0.7803921568627451, 0.7803921568627451],
+Background->RGBColor[
+ 0.027450980392156862`, 0.1411764705882353, 0.17254901960784313`],
+FrontEndVersion->"14.2 for Linux x86 (64-bit) (December 26, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"c09f29a9-0c8a-4224-b6ff-3c6e7deb8f82"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 242, 5, 23, "Print",ExpressionUUID->"1cfed054-7680-4327-bb5b-3a69ebe00816"],
+Cell[821, 29, 510, 12, 24, "Print",ExpressionUUID->"079c894e-2b37-4aaa-b866-2574bbf1cafa"],
+Cell[1334, 43, 263, 5, 23, "Print",ExpressionUUID->"f7f6158a-fe54-4b18-8794-081f3d9b483d"],
+Cell[1600, 50, 224, 4, 23, "Print",ExpressionUUID->"dbc2cf40-a112-465b-a7a4-d113efc5c3aa"]
+}, Open  ]]
+}
+]
+*)
+

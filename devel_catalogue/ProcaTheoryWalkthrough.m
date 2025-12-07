@@ -1,108 +1,58 @@
-Print@"OK, so we are going to analyse the Maxwell theory now.";
-
-Print@"The first step is to load the Hamilcar package.";
+Print@"OK, so we are going to analyse the Maxwell theory now. The first step is to load the Hamilcar package.";
 <<xAct`Hamilcar`;
-
-Print@"Next, we need to define a bunch of things based on what we've been told.";
-Print@"Firstly we will define the constant symbols in the theory.";
+Print@"The next step is to disable the dynamical metric, since we are working on Minkowski spacetime.";
+$DynamicalMetric=False;
+Print@"When we work with Poisson brackets, we smear the operands manually.";
+$ManualSmearing=True;
+Print@"Next, we need to define a bunch of things based on what we've been told. Firstly we will define the constant symbols in the theory.";
 DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"];
 DefConstantSymbol[SecondKineticCoupling,PrintAs->"\[Beta]"];
 DefConstantSymbol[SquareMassCoupling,PrintAs->"\[Gamma]"];
-
 Print@"Next we define the canonical fields in the theory. Note that the conjugate momenta are defined automatically alongside the fields.";
-DefCanonicalField[VectorFieldRank10p[],FieldSymbol->"\[ScriptCapitalA]0p",
-	MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]0p"];
-DefCanonicalField[VectorFieldRank11m[-a],FieldSymbol->"\[ScriptCapitalA]1m",
-	MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]1m"];
-
+DefCanonicalField[VectorFieldRank10p[],FieldSymbol->"\[ScriptCapitalA]0p",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]0p"];
+DefCanonicalField[VectorFieldRank11m[-a],FieldSymbol->"\[ScriptCapitalA]1m",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]1m"];
 Print@"Next we define the multipliers in the theory.";
-DefTensor[VectorFieldRank10pLagrangeMultiplier[],M3,
-	PrintAs->"\[Lambda]\[ScriptCapitalA]0p"];
-DefTensor[VectorFieldRank11mLagrangeMultiplier[-a],M3,
-	PrintAs->"\[Lambda]\[ScriptCapitalA]1m"];
-
+DefTensor[VectorFieldRank10pLagrangeMultiplier[],M3,PrintAs->"\[Lambda]\[ScriptCapitalA]0p"];
+DefTensor[VectorFieldRank11mLagrangeMultiplier[-a],M3,PrintAs->"\[Lambda]\[ScriptCapitalA]1m"];
 Print@"Now we want to define two smearing functions for each of the canonical fields, whose index structure matches those fields.";
-DefTensor[SmearingFVectorFieldRank10p[],M3,
-	PrintAs->"\[ScriptF]"];
-DefTensor[SmearingFVectorFieldRank11m[-a],M3,
-	PrintAs->"\[ScriptF]"];
-DefTensor[SmearingSVectorFieldRank10p[],M3,
-	PrintAs->"\[ScriptS]"];
-DefTensor[SmearingSVectorFieldRank11m[-a],M3,
-	PrintAs->"\[ScriptS]"];
-
+DefTensor[SmearingFVectorFieldRank10p[],M3,PrintAs->"\[ScriptF]"];
+DefTensor[SmearingFVectorFieldRank11m[-a],M3,PrintAs->"\[ScriptF]"];
+DefTensor[SmearingSVectorFieldRank10p[],M3,PrintAs->"\[ScriptS]"];
+DefTensor[SmearingSVectorFieldRank11m[-a],M3,PrintAs->"\[ScriptS]"];
 Print@"Now we define the total Hamiltonian density for the theory.";
-TotalHamiltonianDensity=-(SquareMassCoupling*VectorFieldRank10p[]^2) + ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] + SquareMassCoupling*VectorFieldRank11m[-a]*VectorFieldRank11m[a] + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2;
-TotalHamiltonianDensity//ToCanonical;
+TotalHamiltonianDensity=(*-(SquareMassCoupling*VectorFieldRank10p[]^2)*) + ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] +(* SquareMassCoupling*VectorFieldRank11m[-a]*VectorFieldRank11m[a]*) + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2;
+TotalHamiltonianDensity//Recanonicalize;
 TotalHamiltonianDensity//Print;
-
-Print@"We will now be using Poisson brackets, and we smear these ourselves.";
-$ManualSmearing=True;
-
-Print@"Let's try to compute a velocity.";
-Expr=PoissonBracket[SmearingFVectorFieldRank10p[]*VectorFieldRank10p[],
-	TotalHamiltonianDensity,Parallel->True];
-Expr//Print;
-
 Print@"The first step is to find all the primary constraints. Having been provided with the total Hamiltonian density, we could recover these by reading them off directly. It is safer, however, to proceed systematically, by taking variations with respect to the multipliers.";
-Expr=
-	VarD[VectorFieldRank10pLagrangeMultiplier[],CD][TotalHamiltonianDensity];
+Expr=VarD[VectorFieldRank10pLagrangeMultiplier[],CD][TotalHamiltonianDensity];
+Expr//Recanonicalize;
 Expr//Print;
-Print@"So that is non-zero, and hence the theory has at least one primary constraint.";
-
-Print@"Let's define a tensor to represent that constraint.";
-DefTensor[PrimaryConstraintVectorFieldRank10p[],M3,
-	PrintAs->"\[Phi]\[ScriptCapitalA]0p"];
-FromPrimaryConstraintVectorFieldRank10p=MakeRule[{
-	PrimaryConstraintVectorFieldRank10p[],
-	Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+Print@"So that is non-zero, and hence the theory has at least one primary constraint. let's define a tensor to represent that constraint.";
+DefTensor[PrimaryConstraintVectorFieldRank10p[],M3,PrintAs->"\[Phi]\[ScriptCapitalA]0p"];
+FromPrimaryConstraintVectorFieldRank10p=MakeRule[{PrimaryConstraintVectorFieldRank10p[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
 FromPrimaryConstraintVectorFieldRank10p//PrependTotalFrom;
-
 Print@"Let's check the other one.";
-PrimaryConstraintVectorFieldRank11m=
-	VarD[VectorFieldRank11mLagrangeMultiplier[-a],CD][TotalHamiltonianDensity];
-PrimaryConstraintVectorFieldRank11m//Print;
-Print@"Ah, so that vanishes identically, and hence there is no primary constraint associated with that multiplier.";
-
-Print@"So, the theory has one primary constraint in total. Now we need to check whether it is preserved in time. Generally, the primaries might not be scalars, so we stick to the routine of smearing them with appropriate smearing functions before taking Poisson brackets with the total Hamiltonian. To compute the secondaries as (potentiall indexed) tensor expressions, we then take variations with respect to the smearing functions.";
-Expr=
-	PoissonBracket[SmearingSVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],
-		TotalHamiltonianDensity,Parallel->True];
-Expr//=VarD[SmearingSVectorFieldRank10p[],CD][#]&;
-Expr//=ToCanonical;
-Expr//=ContractMetric;
-Expr//=ScreenDollarIndices;
+Expr=VarD[VectorFieldRank11mLagrangeMultiplier[-a],CD][TotalHamiltonianDensity];
+Expr//Recanonicalize;
 Expr//Print;
-Print@"Ah, so the velocity of the primary doesn't vanish identically, nor is it equal to a combination of any other constraints (there are none), nor is it equal to an expression which can be set to zero for appropriate values of the multipliers. Hence we have found a secondary constraint.";
-
-Print@"Let's define a tensor to represent that secondary constraint.";
-DefTensor[SecondaryConstraintVectorFieldRank10p[],M3,
-	PrintAs->"\[Chi]\[ScriptCapitalA]0p"];
-FromSecondaryConstraintVectorFieldRank10p=MakeRule[{
-	SecondaryConstraintVectorFieldRank10p[],
-	Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+Print@"Ah, so that vanishes identically, and hence there is no primary constraint associated with that multiplier. So, the theory has one primary constraint in total. Now we need to check whether it is preserved in time. Generally, the primaries might not be scalars, so we stick to the routine of smearing them with appropriate smearing functions before taking Poisson brackets with the total Hamiltonian. To compute the secondaries as (potentially indexed) tensor expressions, we then take variations with respect to the smearing functions.";
+Expr=PoissonBracket[SmearingSVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],TotalHamiltonianDensity,Parallel->True];
+Expr//=VarD[SmearingSVectorFieldRank10p[],CD][#]&;
+Expr//=Recanonicalize;
+Expr//Print;
+Print@"Ah, so the velocity of the primary doesn't vanish identically, nor is it equal to a combination of any other constraints (there are none), nor is it equal to an expression which can be set to zero for appropriate values of the multipliers. Hence we have found a secondary constraint. Let's define a tensor to represent that secondary constraint.";
+DefTensor[SecondaryConstraintVectorFieldRank10p[],M3,PrintAs->"\[Chi]\[ScriptCapitalA]0p"];
+FromSecondaryConstraintVectorFieldRank10p=MakeRule[{SecondaryConstraintVectorFieldRank10p[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
 FromSecondaryConstraintVectorFieldRank10p//PrependTotalFrom;
-
 Print@"We now have two constraints in total. Next we need to check whether the secondary is preserved in time. We proceed as before, smearing with an appropriate smearing function and taking the Poisson bracket with the total Hamiltonian, before taking variations with respect to the smearing function to recover the indexed tensor expression.";
-Expr=
-	PoissonBracket[SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],
-		TotalHamiltonianDensity,Parallel->True];
+Expr=PoissonBracket[SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],TotalHamiltonianDensity,Parallel->True];
 Expr//=VarD[SmearingSVectorFieldRank10p[],CD][#]&;
-Expr//=ToCanonical;
-Expr//=ContractMetric;
-Expr//=ScreenDollarIndices;
+Expr//=Recanonicalize;
 Expr//Print;
-
-Print@"Ah, so the velocity of the secondary doesn't vanish identically, nor is it equal to a combination of any other constraints, but it is equal to an expression which can be set to zero for appropriate values of the multipliers. Hence there are no further constraints, and we have found all the constraints in the theory.";
-
-Print@"Now we need to classify the constraints into first and second class. To do this, we need to compute the Poisson brackets between all pairs of constraints.";
-Expr=
-	PoissonBracket[SmearingFVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],
-		SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],
-		Parallel->True];
+Print@"Ah, so the velocity of the secondary doesn't vanish identically, nor is it equal to a combination of any other constraints, but it is equal to an expression which can be set to zero for appropriate values of the multipliers. Hence there are no further constraints, and we have found all the constraints in the theory. Now we need to classify the constraints into first and second class. To do this, we need to compute the Poisson brackets between all pairs of constraints.";
+Expr=PoissonBracket[SmearingFVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],SmearingSVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],Parallel->True];
+(*Expr=PoissonBracket[SmearingFVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],Parallel->True];*)
+Expr//Recanonicalize;
 Expr//Print;
-Print@"Ah, so the Poisson bracket between the primary and secondary constraints is non-vanishing. Since there are only two constraints in total, this means that both constraints are second class.";
-
-Print@"We have now found and classified all the constraints in the theory. To summarise, the theory has two constraints in total: one primary and one secondary. Both constraints are second class. The total number of canonical degrees of freedom in the theory is 2*(1+3), where the 2 is from the field-momentum pairs, and the (1+3) is from the 0p and 1m components of the vector field. From this we subtract 1 degree of freedom for the primary constraint, and another degree of freedom for the secondary constraint, leaving us with 2*(1+3)-2=6 canonical degrees of freedom, or equivalently 3 physical degrees of freedom.";
-
+Print@"Ah, so the Poisson bracket between the primary and secondary constraints is non-vanishing. Since there are only two constraints in total, this means that both constraints are second class. We have now found and classified all the constraints in the theory. To summarise, the theory has two constraints in total: one primary and one secondary. Both constraints are second class. The total number of canonical degrees of freedom in the theory is 2*(1+3), where the 2 is from the field-momentum pairs, and the (1+3) is from the 0p and 1m components of the vector field. From this we subtract 1 degree of freedom for the primary constraint, and another degree of freedom for the secondary constraint, leaving us with 2*(1+3)-2=6 canonical degrees of freedom, or equivalently 3 physical degrees of freedom.";
 Quit[];

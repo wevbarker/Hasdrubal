@@ -22,7 +22,10 @@ AutomaticRules[V,MakeRule[{CD[a]@V[b],0},
 InverseInducedMetricToGHack=MakeRule[{InverseInducedMetric[a,b],-G[a,b]},
 	MetricOn->All,ContractMetrics->True];
 
-ThreePlusOne[InputExpr_,ModelName_]:=Module[{
+Options[ThreePlusOne]={DeclaredFieldNames->{},
+	DeclaredFieldSpinParityTensorHeads-><||>,
+	DeclaredDecomposeFields-><||>};
+ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 	FieldNames=InputExpr,
 	VelocitiesToMultipliersRules,
 	ThreePlusOneLagrangian=InputExpr,
@@ -45,7 +48,10 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 		];
 	];
 
-	FieldNames//=ExtractFields;
+	If[OptionValue[DeclaredFieldNames]=!={},
+		FieldNames=OptionValue@DeclaredFieldNames;,
+		FieldNames//=ExtractFields;
+	];
 
 	$DerivativeRules={};
 	$CanonicalFields={};
@@ -53,11 +59,11 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 	$LagrangeMultipliers={};
 	$Velocities={};
 	Do[
-		PrepareAutomaticRules[FieldName],
+		PrepareAutomaticRules[FieldName,DeclaredFieldSpinParityTensorHeads->OptionValue@DeclaredFieldSpinParityTensorHeads];,
 		{FieldName,FieldNames}
 	];	
 	Do[
-		ThreePlusOneLagrangian//=FieldThreePlusOne[#,FieldName]&,
+		ThreePlusOneLagrangian//=FieldThreePlusOne[#,FieldName,DeclaredDecomposeFields->OptionValue@DeclaredDecomposeFields]&,
 		{FieldName,FieldNames}
 	];	
 
@@ -74,22 +80,42 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 	ThreePlusOneLagrangian//=ApplyDerivativeRules;
 	ThreePlusOneLagrangian//=ApplyDerivativeRules;
 	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//=ApplyDerivativeRules;
+	ThreePlusOneLagrangian//DisplayExpression;
 	ThreePlusOneLagrangian//=(#/.InverseInducedMetricToGHack)&;
 	ThreePlusOneLagrangian//=ToCanonical;
 	ThreePlusOneLagrangian//=ContractMetric;
 	ThreePlusOneLagrangian//=ScreenDollarIndices;
+	ThreePlusOneLagrangian//DisplayExpression;
 	ThreePlusOneLagrangian//=(#/.{V->Zero})&;
 	ThreePlusOneLagrangian//=ToCanonical;
 	ThreePlusOneLagrangian//=ContractMetric;
 	ThreePlusOneLagrangian//=ScreenDollarIndices;
 	ThreePlusOneLagrangian//DisplayExpression;
 
+	(*xAct`PSALTer`MetricPerturbation`Rank2SymmetricPara0pCanonicalFieldp=Zero;
+	xAct`PSALTer`MetricPerturbation`Rank2SymmetricPara0pCanonicalField=Zero;
+	ThreePlusOneLagrangian//=ToCanonical;
+	ThreePlusOneLagrangian//=ContractMetric;
+	ThreePlusOneLagrangian//=ScreenDollarIndices;
+	ThreePlusOneLagrangian//DisplayExpression;
+	ThreePlusOneLagrangian//Together;
+	ThreePlusOneLagrangian//Numerator;
+	Quit[];*)
+
+
 	Comment@"The total Hamiltonian.";
 	$Velocities//=((FromIndexFree@ToIndexFree@#)&/@#)&;
 	$VelocitiesUp=$Velocities/.{SomeIndex_?TangentM4`Q->-SomeIndex};
 	$ConjugateMomenta//=((FromIndexFree@ToIndexFree@#)&/@#)&;
+
 	Expr=ThreePlusOneLagrangian;
 	Expr//=DefineMomenta;
+	Expr//DisplayExpression;
 	{VelocitySolutions,Constraints}=Expr//SolveVelocities;
 	CanonicalHamiltonian=ThreePlusOneLagrangian;
 	CanonicalHamiltonian//=ConstructCanonicalHamiltonian;
@@ -101,8 +127,15 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 	CanonicalHamiltonian//=(#/.VelocitiesToMultipliersRules)&;
 	CanonicalHamiltonian//DisplayExpression;
 
-	Comment@"Producing output in string form.";
+	Comment@"Collecting constant symbols.";
+	ConstantSymbols=CanonicalHamiltonian;
+	ConstantSymbols//=ListOfConstants;
+	ConstantSymbols//DisplayExpression;
+	ConstantSymbols//=InputForm;
+	ConstantSymbols//=ToString;
+	ConstantSymbols//Print;
 
+	Comment@"Producing output in string form.";
 	CanonicalHamiltonian//DisplayExpression;
 	CanonicalHamiltonian//=InputForm;
 	CanonicalHamiltonian//=ToString;
@@ -110,9 +143,13 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 
 	$FieldSpinParityTensors={};
 	Do[
-		Class=FieldName;
-		Class//=xAct`PSALTer`Private`FieldAssociation;
-		Expr=Flatten@Values@(Flatten/@(Values/@(Values/@(Class@xAct`PSALTer`Private`FieldSpinParityTensorHeads))));
+		If[Length@OptionValue@DeclaredFieldSpinParityTensorHeads>0,
+			Expr=(OptionValue@DeclaredFieldSpinParityTensorHeads)[FieldName];
+		,
+			Class=FieldName;
+			Class//=xAct`PSALTer`Private`FieldAssociation;
+			Expr=Flatten@Values@(Flatten/@(Values/@(Values/@(Class@xAct`PSALTer`Private`FieldSpinParityTensorHeads))));
+		];
 		Expr//=((FromIndexFree@ToIndexFree@#)&/@#)&;
 		$FieldSpinParityTensors=$FieldSpinParityTensors~Join~Expr;
 		,
@@ -140,10 +177,16 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 			FileNameJoin@{$xPlainWorkingDirectory,ModelName<>".txt"},
 			PageWidth->Infinity];
 
+	WriteString[OutputFile,"This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm."];
 
 	WriteString[OutputFile,"Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not."];
 	WriteString[OutputFile,"\n"];
 	WriteString[OutputFile,CanonicalHamiltonian];
+	WriteString[OutputFile,"\n"];
+
+	WriteString[OutputFile,"Here is a Wolfram Language statement of all the constant symbols that appear in the total Hamiltonian above."];
+	WriteString[OutputFile,"\n"];
+	WriteString[OutputFile,ConstantSymbols];
 	WriteString[OutputFile,"\n"];
 
 	WriteString[OutputFile,"Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above."];
@@ -160,6 +203,11 @@ ThreePlusOne[InputExpr_,ModelName_]:=Module[{
 	WriteString[OutputFile,"\n"];
 	WriteString[OutputFile,$Multipliers];
 	WriteString[OutputFile,"\n"];
+
+	WriteString[OutputFile,"This is the end of the provided information; you should tell me when you've read it and stand by for further instructions."];
+	(*WriteString[OutputFile,"This is the end of the provided information; you should now proceed with the algorithm. It is critically important that you implement the algorithm step-by-step. In particular, you should not attempt to implement more than one PoissonBracket or VarD call within one instance of tool use. After each tool use, you should echo back the result you obtain, and carefully consider before proceeding to the next step."];*)
+	WriteString[OutputFile,"\n"];
+
 	Close@OutputFile;
 
 	Run["bash "<>FileNameJoin@{DirectoryName[$InputFileName],"txt2md.sh"}<>" "<>FileNameJoin@{$xPlainWorkingDirectory,ModelName<>".txt"}];
