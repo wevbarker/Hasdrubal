@@ -10,17 +10,17 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       154,          7]
-NotebookDataLength[      1009,         39]
+NotebookDataLength[      1011,         39]
 NotebookOptionsPosition[       557,         21]
-NotebookOutlinePosition[      1145,         42]
-CellTagsIndexPosition[      1102,         39]
+NotebookOutlinePosition[      1147,         42]
+CellTagsIndexPosition[      1104,         39]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 },
-WindowSize->{1677, 1003.5},
-WindowMargins->{{0, Automatic}, {0, Automatic}},
+WindowSize->{1437, 763.5},
+WindowMargins->{{0, Automatic}, {Automatic, -765}},
 WindowElements->{},
 FontColor->RGBColor[
  0.7686274509803922, 0.7803921568627451, 0.7803921568627451],
@@ -28,7 +28,7 @@ Background->RGBColor[
  0.027450980392156862`, 0.1411764705882353, 0.17254901960784313`],
 FrontEndVersion->"14.2 for Linux x86 (64-bit) (December 26, 2024)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"cbfb4cc0-94e0-4627-abed-59665227ec5e"
+ExpressionUUID->"9f27af2a-37fe-4118-b4c6-e9c49bcc2410"
 ]
 (* End of Notebook Content *)
 

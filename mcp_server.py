@@ -160,8 +160,11 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     try:
         if name == "evaluate_wolfram":
             code = arguments["code"]
-            result = kernel.evaluate(code)
-            return [TextContent(type="text", text=str(result))]
+            result, messages = kernel.evaluate_with_messages(code)
+            response = str(result)
+            if messages:
+                response += f"\n\n[Kernel Messages]\n{messages}"
+            return [TextContent(type="text", text=response)]
 
         elif name == "define_canonical_field":
             field_expr = arguments["field_expr"]
@@ -178,23 +181,32 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             options_str = ", " + ", ".join(options) if options else ""
             code = f"DefCanonicalField[{field_expr}{options_str}]"
 
-            result = kernel.evaluate(code)
-            return [TextContent(type="text", text=f"Field defined: {result}")]
+            result, messages = kernel.evaluate_with_messages(code)
+            response = f"Field defined: {result}"
+            if messages:
+                response += f"\n\n[Kernel Messages]\n{messages}"
+            return [TextContent(type="text", text=response)]
 
         elif name == "poisson_bracket":
             op1 = arguments["operator1"]
             op2 = arguments["operator2"]
             code = f"PoissonBracket[{op1}, {op2}]"
 
-            result = kernel.evaluate(code)
-            return [TextContent(type="text", text=str(result))]
+            result, messages = kernel.evaluate_with_messages(code)
+            response = str(result)
+            if messages:
+                response += f"\n\n[Kernel Messages]\n{messages}"
+            return [TextContent(type="text", text=response)]
 
         elif name == "find_algebra":
             ansatz = arguments["ansatz"]
             code = f"FindAlgebra[{ansatz}]"
 
-            result = kernel.evaluate(code)
-            return [TextContent(type="text", text=str(result))]
+            result, messages = kernel.evaluate_with_messages(code)
+            response = str(result)
+            if messages:
+                response += f"\n\n[Kernel Messages]\n{messages}"
+            return [TextContent(type="text", text=response)]
 
         elif name == "reload_hamilcar":
             result = kernel.evaluate("RereadSources[]")

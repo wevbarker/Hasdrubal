@@ -1,4 +1,4 @@
-<img src="Logos/GitHubLogo.png" width="1000">
+<img src="logos/GitHubLogo.png" width="1000">
 
 # Hasdrubal
 
@@ -16,22 +16,11 @@ source venv/bin/activate
 python hasdrubal_repl.py
 ```
 
-### Tmux Workflow (Recommended)
+### Wrapper Script
 
 ```bash
-cd ~/Documents/Hasdrubal
-source venv/bin/activate
-./hasdrubal
+./hasdrubal_repl.sh
 ```
-
-This creates a 3-pane tmux session:
-- **Top**: Split-pane REPL (logs above, conversation below)
-- **Middle**: File watcher status
-- **Bottom**: Vim editing `.PROMPT.txt`
-
-Write prompts in Vim, save (`:w`), and watch Hasdrubal respond automatically.
-
-Exit with `Ctrl-C` in watcher pane - all panes close automatically.
 
 ## Features
 
@@ -50,14 +39,6 @@ Ask questions about canonical field theory:
 - **Upper pane**: Verbose logs (MCP calls, kernel output, timestamps)
 - **Lower pane**: Clean conversation (your prompts, agent responses, Wolfram code)
 
-### Vim Integration
-
-Write prompts in your editor, save to send:
-1. Edit `.PROMPT.txt` in Vim
-2. Save with `:w`
-3. Watcher auto-sends to REPL
-4. Continue conversation by editing and saving again
-
 ### Persistent Kernel
 
 - Maintains Wolfram kernel session across prompts
@@ -74,9 +55,8 @@ User Prompt → GPT-4o Agent → MCP Tools → Wolfram Kernel → Hamilcar Packa
 ### Components
 
 - **MCP Server** (`mcp_server.py`): Exposes Hamilcar tools via Model Context Protocol
-- **Hasdrubal Agent** (`hamilcar_agents/hamilcar_assistant.py`): GPT-4o with field theory knowledge
+- **Hasdrubal Agent** (`hamilcar_agents/hamilcar_assistant.py`): GPT-5.1 with field theory knowledge
 - **REPL** (`hasdrubal_repl.py`): Interactive split-pane interface
-- **Tmux Scripts** (`hasdrubal`, `hasdrubal-watcher`): File-watching workflow
 
 ### MCP Tools
 
@@ -91,7 +71,7 @@ User Prompt → GPT-4o Agent → MCP Tools → Wolfram Kernel → Hamilcar Packa
 
 - **Mathematica**: v14.0.0.0 or compatible with Hamilcar package installed
 - **Python**: 3.13.7 (virtual environment included)
-- **System**: tmux (for workflow mode), inotifywait (optional)
+- **System**: Linux
 
 ### Python Dependencies
 
@@ -101,23 +81,6 @@ User Prompt → GPT-4o Agent → MCP Tools → Wolfram Kernel → Hamilcar Packa
 - pytest 8.4.2
 
 ## Configuration
-
-### Environment Variables
-
-Tmux workflow:
-- `HASDRUBAL_TOP_PCT` (default: 70) - REPL pane height percentage
-- `HASDRUBAL_MID_LINES` (default: 2) - Watcher pane height in lines
-
-Example:
-```bash
-export HASDRUBAL_TOP_PCT=80
-./hasdrubal
-```
-
-Or use the `-p` flag:
-```bash
-./hasdrubal -p 80
-```
 
 ### API Keys
 
@@ -201,29 +164,6 @@ killall -9 WolframKernel
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-
-### Tmux Session Issues
-
-List active Hasdrubal sessions:
-```bash
-tmux list-sessions | grep hasdrubal
-```
-
-Kill specific session:
-```bash
-tmux kill-session -t hasdrubal-12345-1234567890
-```
-
-### Vim Powerline Errors
-
-The launcher automatically disables powerline to avoid module conflicts. If you see powerline errors, ensure you're using the `./hasdrubal` launcher script, not manually starting vim.
-
-## Documentation
-
-- `README_TMUX.md`: Tmux workflow detailed guide
-- `HasdrubalTmux.md`: Complete development history
-- `CLAUDE.md`: Claude Code configuration and technical details
-- `AGENT_ANALYSIS.md`: Analysis of computation failures and debugging
 
 ## Related Projects
 

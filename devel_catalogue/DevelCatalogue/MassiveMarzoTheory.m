@@ -8,7 +8,7 @@ Code[DefConstantSymbol[SquareMassCoupling,PrintAs->"\[Beta]"]];
 
 Comment@"Set up a vector field.";
 Code[DefField[VectorField[a],PrintAs->"\[ScriptCapitalA]",
-	PrintSourceAs->"\[ScriptCapitalJ]"];];
+	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->35];];
 Expr=VectorField[a];
 Expr//DisplayExpression;
 

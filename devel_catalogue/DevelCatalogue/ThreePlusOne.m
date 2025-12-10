@@ -2,15 +2,16 @@
 (*  ThreePlusOne  *)
 (*================*)
 
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","ExtractFields.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","PrepareAutomaticRules.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","FieldThreePlusOne.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","ActivateTimeD.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","ProjectMetric.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","ApplyDerivativeRules.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","DefineMomenta.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","SolveVelocities.m"}];
-Get@FileNameJoin[{"HasdrubalPSALTer","ThreePlusOne","ConstructCanonicalHamiltonian.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","TimeD.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","ExtractFields.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","PrepareAutomaticRules.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","FieldThreePlusOne.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","ActivateTimeD.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","ProjectMetric.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","ApplyDerivativeRules.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","DefineMomenta.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","SolveVelocities.m"}];
+Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne","ConstructCanonicalHamiltonian.m"}];
 
 DefTensor[InverseInducedMetric[a,b],M4,Symmetric[{a,b}],PrintAs->"H"];
 GToInverseInducedMetric=MakeRule[{G[a,b],InverseInducedMetric[a,b]+V[a]V[b]},
@@ -37,7 +38,7 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 	Comment@"Here is the linear theory for export to PSALTer.";
 	InputExprVar=InputExpr;
 	ModelNameVar=ModelName;
-	Block[{xAct`PSALTer`Private`$Disabled=True},
+	Block[{(*xAct`PSALTer`Private`$Disabled=True*)},
 		Catch@xAct`xPlain`Code[InputExprVar,ModelNameVar,
 			ParticleSpectrum[InputExpr,
 				TheoryName->ModelName,
@@ -178,7 +179,7 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 			PageWidth->Infinity];
 
 	WriteString[OutputFile,"This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm."];
-
+	WriteString[OutputFile,"\n"];
 	WriteString[OutputFile,"Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not."];
 	WriteString[OutputFile,"\n"];
 	WriteString[OutputFile,CanonicalHamiltonian];
@@ -204,8 +205,7 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 	WriteString[OutputFile,$Multipliers];
 	WriteString[OutputFile,"\n"];
 
-	WriteString[OutputFile,"This is the end of the provided information; you should tell me when you've read it and stand by for further instructions."];
-	(*WriteString[OutputFile,"This is the end of the provided information; you should now proceed with the algorithm. It is critically important that you implement the algorithm step-by-step. In particular, you should not attempt to implement more than one PoissonBracket or VarD call within one instance of tool use. After each tool use, you should echo back the result you obtain, and carefully consider before proceeding to the next step."];*)
+	WriteString[OutputFile,"This is the end of the provided information; you should tell me when you've read it, and then propose the first step to start implementing the Dirac-Bergmann algorithm, in line with your earlier instructions about workflow. Wait for the user to confirm whether you should proceed with that step, and then continue step-by-step from there."];
 	WriteString[OutputFile,"\n"];
 
 	Close@OutputFile;

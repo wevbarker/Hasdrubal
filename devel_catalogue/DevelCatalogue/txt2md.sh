@@ -20,28 +20,36 @@ hash_name() {
     echo -n "$1" | md5sum | cut -c1-8
 }
 
-# Extract constant symbols from line 4
+# Extract constant symbols from line 5
 # Format: {FirstKineticCoupling, SecondKineticCoupling, ...}
-constants_line=$(sed -n '4p' "$input_file")
+constants_line=$(sed -n '5p' "$input_file")
 
-# Extract constant names
+# Extract constant names by parsing the list between { and }
+# Remove braces, split by comma, trim whitespace
 constants=()
-while IFS= read -r match; do
-    if [[ ! " ${constants[*]} " =~ " ${match} " ]]; then
-        constants+=("$match")
+constants_inner=$(echo "$constants_line" | sed 's/^{//; s/}$//')
+IFS=',' read -ra const_array <<< "$constants_inner"
+for const in "${const_array[@]}"; do
+    const=$(echo "$const" | tr -d ' ')  # trim whitespace
+    if [[ -n "$const" && ! " ${constants[*]} " =~ " ${const} " ]]; then
+        constants+=("$const")
     fi
-done < <(echo "$constants_line" | grep -oE "[A-Za-z]+Coupling")
+done
+
+# Sort constants by length (longest first) to avoid substring replacement issues
+IFS=$'\n' constants_sorted=($(printf '%s\n' "${constants[@]}" | awk '{ print length, $0 }' | sort -rn | cut -d' ' -f2-))
+unset IFS
 
 # Build sed commands for constants
 sed_constants=""
-for const in "${constants[@]}"; do
+for const in "${constants_sorted[@]}"; do
     hash=$(hash_name "$const")
     sed_constants="${sed_constants}s/${const}/Coupling${hash}/g;"
 done
 
-# Extract full field identifiers from line 6 (canonical fields list)
+# Extract full field identifiers from line 7 (canonical fields list)
 # Format: {xAct`PSALTer`VectorField`Rank10p[], xAct`PSALTer`VectorField`Rank11m[-a]}
-canonical_fields_line=$(sed -n '6p' "$input_file")
+canonical_fields_line=$(sed -n '7p' "$input_file")
 
 # Extract full field identifiers (e.g., VectorFieldRank10p, VectorFieldRank11m)
 # These are context+basename combined
@@ -78,7 +86,7 @@ sed_commands="${sed_constants}${sed_fields}"
 # Process each line
 {
     while IFS= read -r line; do
-        if [[ "$line" == "Here is"* ]] || [[ "$line" == "This is the end"* ]]; then
+        if [[ "$line" == "This prompt"* ]] || [[ "$line" == "Here is"* ]] || [[ "$line" == "This is the end"* ]]; then
             # Description line - output as plain text
             echo "$line"
             echo

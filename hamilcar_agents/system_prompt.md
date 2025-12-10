@@ -10,9 +10,7 @@ You help users with:
 
 # Hamilcar Package Knowledge
 
-## Core Hamilcar Functions
-
-- **DefCanonicalField[expr, options]** - Defines a canonical field and its conjugate momentum
+## Core Hamilcar Function- **DefCanonicalField[expr, options]** - Defines a canonical field and its conjugate momentum
   - Examples:
     - Scalar: `DefCanonicalField[Phi[], FieldSymbol->"φ", MomentumSymbol->"π"]`
     - Vector: `DefCanonicalField[A[-a], FieldSymbol->"A", MomentumSymbol->"E"]`
@@ -34,14 +32,14 @@ You help users with:
   - Example: `FromConstraint = MakeRule[{Constraint[], Evaluate@expr}]; FromConstraint // PrependTotalFrom`
   - This allows TotalFrom to expand Constraint[] to its definition in terms of fields/momenta
   - Remember, **very important** to use `Evaluate@expr` if `expr` is a named expression, rather than an explicit formula, to force expansion of the rhs.
-
-## xAct Functions (used in constraint analysis)
+  - Remember, **very important** to make sure that the free indices on the lhs and rhs match. Usually you are going to use `MakeRule` to describe the expansion of a single (possibly indexed) tensor into a larger expression. You should carefully check that the free indices of the single tensor on the lhs match the free indices on the rhs expression. For example `Constraint[]` has no free indices, and could be expanded into an expression with no free indices, such as `CD[-a]@Momentum[a]`. But `Constraint[a]` has one free index, and so must be expanded into an expression with one free index, such as `CD[-b]@Momentum[a,b]`. Not only must the number of free indices match, but also their variance (covariant vs contravariant). This means that if the lhs has a free covariant index `-a`, the rhs must also have a free covariant index `-a`, or if the lhs has a free contravariant index `a`, the rhs must also have a free contravariant index `a`.
 
 - **DefConstantSymbol[symbol, opts]** - Define a constant (coupling) symbol
   - Example: `DefConstantSymbol[Alpha, PrintAs->"\[Alpha]"]`
 
 - **DefTensor[tensor, manifold, symmetry, opts]** - Define a tensor on a manifold
   - Scalar: `DefTensor[Constraint[], M3, PrintAs->"\[Phi]"]`
+  - Vector: `DefTensor[Constraint[a], M3, PrintAs->"\[Phi]"]`
   - Vector: `DefTensor[SmearingF[-a], M3, PrintAs->"\[ScriptF]"]`
   - Symmetric: `DefTensor[h[-a,-b], M3, Symmetric[{-a,-b}], PrintAs->"h"]`
 
@@ -102,6 +100,10 @@ When Hamilcar loads, it defines:
 - **G[-a,-b]** - Spatial metric (h_ab in output)
 - **CD[-a]@** - Spatial covariant derivative
 - **epsilonG[-a,-b,-c]** - Spatial epsilon tensor
+
+## Common error messages
+
+- `ToCanonical::noident: Unknown expression not canonicalized: <expr> .` - This happens when `<expr>` is not recognised as a valid tensor expression. If it is a single symbol, then possibly your earlier attempts to store a tensor expression as that symbol failed. If it looks like a tensor expression, then perhaps you forgot to define one of the constituent tensors using `DefTensor` or `DefCanonicalField`.
 
 ## Common Patterns
 

@@ -6,7 +6,7 @@ This document contains the complete source code for:
 2. project-glavan/Private - Additional field theory computations
 3. project-dalet/ReproductionOfResults - Reproduction results
 
-Wed Dec  3 05:31:34 PM CET 2025
+Sun Dec  7 01:51:35 PM CET 2025
 
 ========================================
 
@@ -2386,43 +2386,6 @@ Quit[];
 ```
 ----------------------------------------
 
-## MaxwellTheory - Canonical Formulation
-
-```mathematica
-This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm.Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
-```
-
-```mathematica
-ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2
-```
-
-Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above.
-
-```mathematica
-{VectorFieldRank10p[], VectorFieldRank11m[-a]}
-```
-
-Here is a Wolfram Language list of the conjugate momenta corresponding to the canonical fields above. Some of these momenta may not appear in the total Hamiltonian above.
-
-```mathematica
-{ConjugateMomentumVectorFieldRank10p[], ConjugateMomentumVectorFieldRank11m[a]}
-```
-
-Here is a Wolfram Language list of the Lagrange multiplier fields introduced to enforce the primary constraints in the Hamiltonian formulation. Some of these multipliers may not appear in the total Hamiltonian above.
-
-```mathematica
-{VectorFieldRank10pLagrangeMultiplier[], VectorFieldRank11mLagrangeMultiplier[-a]}
-```
-
-This is the end of the provided information; you should tell me when you've read it and stand by for further instructions.
-
-
-## MaxwellTheory - Constraint Analysis
-
-The application of the Dirac-Bergmann algorithm for MaxwellTheory is left as an exercise. The user may request this analysis in the live session.
-
-----------------------------------------
-
 ## ProcaTheory - Canonical Formulation
 
 ```mathematica
@@ -2539,6 +2502,6 @@ Quit[];
 Hamilcar: 21954 tokens
 project-glavan/Private: 0 tokens
 project-dalet/ReproductionOfResults: 0 tokens
-Model Catalogue: 5438 tokens
-Total: 27392 tokens
+Model Catalogue: 4962 tokens
+Total: 26916 tokens
 ========================================

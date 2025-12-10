@@ -15,6 +15,7 @@ import os
 import sys
 import logging
 import json
+import re
 import uuid
 import tty
 import termios
@@ -53,6 +54,7 @@ CLEAR_TO_END = '\033[0J'
 GREEN_BOLD = '\033[1;32m'
 LIGHT_BLUE_BOLD = '\033[1;96m'
 PALE_RED_BOLD = '\033[1;91m'
+YELLOW_BOLD = '\033[1;33m'
 
 
 def list_sessions(sessions_dir: Path) -> list:
@@ -288,19 +290,43 @@ class SplitPaneDisplay:
         """Add text to lower (conversation) pane."""
         max_width = self.term_width - 2  # Leave some margin
 
+        # Extract any leading ANSI color code to propagate to wrapped lines
+        ansi_pattern = re.compile(r'^(\033\[[0-9;]+m)+')
+
         # First split on newlines, then word-wrap each line
         for line in text.split('\n'):
-            if len(line) > max_width:
-                # Split into multiple lines
+            # Extract leading color code
+            match = ansi_pattern.match(line)
+            color_prefix = match.group(0) if match else ""
+
+            # Calculate visible length (excluding ANSI codes)
+            visible_line = re.sub(r'\033\[[0-9;]+m', '', line)
+
+            if len(visible_line) > max_width:
+                # Split into multiple lines, preserving color
                 words = line.split()
                 current_line = ""
+                current_visible_len = 0
+                is_first_segment = True
+
                 for word in words:
-                    if len(current_line) + len(word) + 1 <= max_width:
+                    # Calculate visible length of word (strip ANSI)
+                    visible_word = re.sub(r'\033\[[0-9;]+m', '', word)
+
+                    if current_visible_len + len(visible_word) + 1 <= max_width:
                         current_line += word + " "
+                        current_visible_len += len(visible_word) + 1
                     else:
                         if current_line:
                             self.conv_buffer.append(current_line.rstrip())
-                        current_line = word + " "
+                        # Continuation lines get the color prefix
+                        if is_first_segment:
+                            is_first_segment = False
+                            current_line = word + " "
+                        else:
+                            current_line = color_prefix + word + " "
+                        current_visible_len = len(visible_word) + 1
+
                 if current_line:
                     self.conv_buffer.append(current_line.rstrip())
             else:
@@ -654,17 +680,26 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
 
             # Log result and store for visibility hack
             result_text = ""
+            messages_text = ""
             if hasattr(result, 'content') and result.content:
-                result_text = result.content[0].text
-                # Log full result
-                session_logger.log_tool_result(tool_name, result_text)
-                # Truncate for display
+                full_result = result.content[0].text
+                # Separate result from kernel messages
+                if "\n\n[Kernel Messages]\n" in full_result:
+                    result_text, messages_text = full_result.split("\n\n[Kernel Messages]\n", 1)
+                else:
+                    result_text = full_result
+                # Log full result (including messages)
+                session_logger.log_tool_result(tool_name, full_result)
+                # Truncate for display in log pane
                 display_text = result_text[:150] + "..." if len(result_text) > 150 else result_text
                 display.add_log(f"{GRAY}[{timestamp}]{RESET} RESULT: {display_text}")
+                if messages_text:
+                    msg_display = messages_text[:100] + "..." if len(messages_text) > 100 else messages_text
+                    display.add_log(f"{YELLOW_BOLD}[{timestamp}] MESSAGES: {msg_display}{RESET}")
 
             # Store for visibility hack (full result, not truncated)
             if wl_code and tool_name in ["evaluate_wolfram", "define_canonical_field", "poisson_bracket"]:
-                tool_call_records.append((wl_code, result_text))
+                tool_call_records.append((wl_code, result_text, messages_text))
 
             return result
 
@@ -679,12 +714,16 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
                     "[SYSTEM NOTE: You are running through OpenAI Agents SDK which has a known bug where tool calls may not be visible to the model. In case you cannot see what you did in the previous turn, here is a copy of your tool calls and their results:",
                     ""
                 ]
-                for i, (code, result_text) in enumerate(previous_tool_calls, 1):
+                for i, (code, result_text, messages_text) in enumerate(previous_tool_calls, 1):
                     preamble_lines.append(f"Tool call {i}: {code}")
                     # Truncate very long results
                     if len(result_text) > 500:
                         result_text = result_text[:500] + "... (truncated)"
-                    preamble_lines.append(f"Result: {result_text}")
+                    preamble_lines.append(f"Output: {result_text}")
+                    if messages_text:
+                        if len(messages_text) > 300:
+                            messages_text = messages_text[:300] + "... (truncated)"
+                        preamble_lines.append(f"Kernel Messages: {messages_text}")
                     preamble_lines.append("")
 
                 preamble_lines.append("If you can already see these tool calls above, disregard this note.]")
@@ -701,13 +740,21 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
 
             result = await Runner.run(agent, conversation_history)
 
-            # Show WL codes in conversation pane
-            if wl_codes:
+            # Show WL codes, outputs, and messages in conversation pane
+            if tool_call_records:
                 display.add_conv("")
-                display.add_conv(f"{PALE_RED_BOLD}Wolfram Code:{RESET}")
-                for code in wl_codes:
+                for code, output, messages in tool_call_records:
+                    display.add_conv(f"{PALE_RED_BOLD}Wolfram Code:{RESET}")
                     display.add_conv(f"{PALE_RED_BOLD}  {code}{RESET}")
-                display.add_conv("")
+                    if output:
+                        # Truncate very long outputs for display
+                        output_display = output[:300] + "..." if len(output) > 300 else output
+                        display.add_conv(f"{PALE_RED_BOLD}Output: {output_display}{RESET}")
+                    if messages:
+                        # Truncate very long messages for display
+                        msg_display = messages[:200] + "..." if len(messages) > 200 else messages
+                        display.add_conv(f"{YELLOW_BOLD}Messages: {msg_display}{RESET}")
+                    display.add_conv("")
 
             # Show agent response in conversation pane
             response = result.final_output
