@@ -1,4 +1,4 @@
-<img src="logos/GitHubLogo.png" width="1000">
+<img src="hasdrubal_logos/GitHubLogo.png" width="1000">
 
 # Hasdrubal
 
@@ -54,15 +54,22 @@ User Prompt → GPT-5.1 Agent → MCP Tools → Wolfram Kernel → Hamilcar Pack
 
 ### Components
 
-- **MCP Server** (`mcp_server.py`): Exposes Hamilcar tools via Model Context Protocol
-- **Hasdrubal Agent** (`hamilcar_agents/hamilcar_assistant.py`): GPT-5.1 with field theory knowledge
-- **REPL** (`hasdrubal_repl.py`): Interactive split-pane interface
+- **MCP Server** (`hasdrubal_agent/mcp_server.py`): Exposes Hamilcar tools via Model Context Protocol
+- **Hasdrubal Agent** (`hasdrubal_agent.py`): GPT-5.2 with field theory knowledge
+- **REPL** (`hasdrubal_repl/hasdrubal_repl.py`): Interactive interface
 
 ### MCP Tools
 
-- `evaluate_wolfram`: Execute arbitrary Wolfram Language code
-- `define_canonical_field`: DefCanonicalField wrapper
-- `poisson_bracket`: PoissonBracket computation
+- `tool_GenericWolframScript`: Execute arbitrary Wolfram Language code
+- `tool_DefCanonicalField`: Define canonical field and momentum
+- `tool_PoissonBracket`: Compute Poisson bracket
+- `tool_TotalFrom`: Expand to canonical variables
+- `tool_PrependTotalFrom`: Register expansion rule
+- `tool_Recanonicalize`: Canonicalize tensor expression
+- `tool_DefConstantSymbol`: Define coupling constant
+- `tool_DefTensor`: Define tensor on M3
+- `tool_VarD`: Variational derivative
+- `tool_MakeRule`: Create replacement rule
 
 ## Requirements
 

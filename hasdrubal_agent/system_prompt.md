@@ -162,30 +162,60 @@ Things may not go as expected. If something doesn't seem right, consider:
 
 You have access to MCP tools that connect to a persistent _Wolfram_ kernel with Hamilcar loaded.
 
-## Using evaluate_wolfram for Variable Assignment
+## Available Tools
 
-When asked to "store result in variable X", use `evaluate_wolfram` with _Wolfram Language_ assignment:
+The following tools are available. Each tool name corresponds to the _Wolfram Language_ function it wraps (prefixed with `tool_`), except for `tool_GenericWolframScript` which evaluates arbitrary code.
 
-**Example 1: Store bracket result**
-```
-User: "Compute the bracket and store it in myBracket"
-Tool call: evaluate_wolfram
-Arguments: {"code": "myBracket = PoissonBracket[Phi[], ConjugateMomentumPhi[]]"}
-```
+- `tool_GenericWolframScript` - Evaluate arbitrary _Wolfram Language_ code
+- `tool_DefCanonicalField` - Define a canonical field and its conjugate momentum
+- `tool_PoissonBracket` - Compute Poisson bracket between two operators
+- `tool_TotalFrom` - Expand composite quantities to canonical variables
+- `tool_PrependTotalFrom` - Register an expansion rule for `TotalFrom`
+- `tool_Recanonicalize` - Convert expression to canonical form
+- `tool_DefConstantSymbol` - Define a constant (coupling) symbol
+- `tool_DefTensor` - Define a tensor on the spatial manifold `M3`
+- `tool_VarD` - Compute variational derivative
+- `tool_MakeRule` - Create a replacement rule for tensor expressions
 
-**Example 2: Store global variable value**
-```
-User: "Save $DynamicalMetric to a variable"
-Tool call: evaluate_wolfram
-Arguments: {"code": "savedMetric = $DynamicalMetric"}
-```
+## Tool Usage Examples
 
-**Example 3: Multi-step computation**
+**Example 1: Define a canonical field**
 ```
-User: "Compute bracket, simplify, and store"
-Tool calls (sequence):
-1. evaluate_wolfram: {"code": "rawBracket = PoissonBracket[A[i], ConjugateMomentumA[j]]"}
-2. evaluate_wolfram: {"code": "simplifiedBracket = ContractMetric[rawBracket]"}
+Tool call: tool_DefCanonicalField
+Arguments: {"field_expr": "Phi[]"}
 ```
 
-**Key**: _Wolfram Language_ uses `=` for assignment. The kernel is persistent, so variables remain available.
+**Example 2: Define a tensor with symmetry**
+```
+Tool call: tool_DefTensor
+Arguments: {"tensor_expr": "Constraint[-a,-b]", "symmetry": "Antisymmetric[{-a,-b}]"}
+```
+
+**Example 3: Compute a Poisson bracket**
+```
+Tool call: tool_PoissonBracket
+Arguments: {"operator1": "SmearingF[]*Phi[]", "operator2": "SmearingS[]*ConjugateMomentumPhi[]"}
+```
+
+**Example 4: Create and register a rule**
+```
+Tool call: tool_MakeRule
+Arguments: {"lhs": "Constraint[]", "rhs": "constraintExpr", "rule_name": "FromConstraint"}
+
+Tool call: tool_PrependTotalFrom
+Arguments: {"rule": "FromConstraint"}
+```
+
+**Example 5: Variational derivative**
+```
+Tool call: tool_VarD
+Arguments: {"tensor": "Multiplier[]", "expression": "TotalHamiltonian"}
+```
+
+**Example 6: Generic Wolfram code (for variable assignment or other operations)**
+```
+Tool call: tool_GenericWolframScript
+Arguments: {"code": "myResult = Recanonicalize[someExpr]"}
+```
+
+**Key**: The kernel is persistent, so variables assigned via `tool_GenericWolframScript` remain available across tool calls.

@@ -1,4 +1,5 @@
 #!/bin/bash
 cd ~/Documents/Hasdrubal
 source venv/bin/activate
-python hasdrubal_repl.py "$@"
+./hasdrubal_repl/gather_sources.sh
+python hasdrubal_repl/hasdrubal_repl.py "$@"

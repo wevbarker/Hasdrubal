@@ -1,5 +1,5 @@
 """
-Hamilcar Assistant Agent
+Hasdrubal Agent
 
 A general-purpose AI agent for canonical field theory calculations using Hamilcar.
 Handles field definitions, Poisson brackets, constraint algebras, and general field theory queries.
@@ -13,7 +13,7 @@ from pathlib import Path
 
 def load_system_prompt() -> str:
     """Load system prompt from markdown file."""
-    base_path = Path(__file__).parent
+    base_path = Path(__file__).parent / "hasdrubal_agent"
 
     prompt_path = base_path / "system_prompt.md"
     if not prompt_path.exists():
@@ -22,9 +22,9 @@ def load_system_prompt() -> str:
     return prompt_path.read_text()
 
 
-def create_hamilcar_assistant() -> Agent:
+def create_hasdrubal_agent() -> Agent:
     """
-    Create the Hamilcar Assistant agent.
+    Create the Hasdrubal agent.
 
     Returns:
         Configured Agent instance ready to help with field theory
@@ -33,7 +33,7 @@ def create_hamilcar_assistant() -> Agent:
     system_prompt = load_system_prompt()
 
     # Load source context if available (alongside system_prompt.md)
-    sources_path = Path(__file__).parent / "hasdrubal_sources.md"
+    sources_path = Path(__file__).parent / "hasdrubal_agent" / "hasdrubal_sources.md"
 
     if sources_path.exists():
         sources_content = sources_path.read_text()
@@ -57,17 +57,17 @@ def create_hamilcar_assistant() -> Agent:
 
 # Agent description for documentation
 AGENT_DESCRIPTION = """
-Hamilcar Assistant
+Hasdrubal Agent
 
 A general-purpose AI agent for canonical field theory calculations.
 
 Capabilities:
-- Natural language → canonical field definitions
+- Natural language -> canonical field definitions
 - Poisson bracket computations
 - Constraint algebra analysis
 - ADM gravity, Maxwell theory, custom theories
 - Index notation handling
 - Physics interpretation
 
-Uses OpenAI GPT-5.1 with MCP tools for Wolfram/Hamilcar access.
+Uses OpenAI GPT-5.2 with MCP tools for Wolfram/Hamilcar access.
 """

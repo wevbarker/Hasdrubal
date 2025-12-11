@@ -5,7 +5,7 @@ This document contains the complete source code for:
 1. Hamilcar - Canonical field theory package
 2. Model Catalogue - Worked examples of Dirac-Bergmann constraint analysis
 
-Thu Dec 11 10:19:36 PM CET 2025
+Fri Dec 12 12:41:41 AM CET 2025
 
 ========================================
 
@@ -2318,17 +2318,17 @@ This is the end of the provided information; you should tell me when you've read
 
 ## KalbRamondTheory - Dirac-Bergmann Constraint Analysis Walkthrough
 
-Project Path: devel_catalogue
+Project Path: hasdrubal_tests
 
 Source Tree:
 
 ```txt
-devel_catalogue
+hasdrubal_tests
 └── KalbRamondTheoryWalkthrough.m
 
 ```
 
-`devel_catalogue/KalbRamondTheoryWalkthrough.m`:
+`hasdrubal_tests/KalbRamondTheoryWalkthrough.m`:
 
 ```m
 Print@"OK, so we are going to analyse the Kalb-Ramond theory now. The first step is to load the Hamilcar package.";
@@ -2428,17 +2428,17 @@ This is the end of the provided information; you should tell me when you've read
 
 ## ProcaTheory - Dirac-Bergmann Constraint Analysis Walkthrough
 
-Project Path: devel_catalogue
+Project Path: hasdrubal_tests
 
 Source Tree:
 
 ```txt
-devel_catalogue
+hasdrubal_tests
 └── ProcaTheoryWalkthrough.m
 
 ```
 
-`devel_catalogue/ProcaTheoryWalkthrough.m`:
+`hasdrubal_tests/ProcaTheoryWalkthrough.m`:
 
 ```m
 Print@"OK, so we are going to analyse the Maxwell theory now. The first step is to load the Hamilcar package.";
@@ -2507,6 +2507,6 @@ Quit[];
 ========================================
 # Token Summary
 Hamilcar: 21956 tokens
-Model Catalogue: 4468 tokens
-Total: 26424 tokens
+Model Catalogue: 4476 tokens
+Total: 26432 tokens
 ========================================

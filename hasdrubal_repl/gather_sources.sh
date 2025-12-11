@@ -4,11 +4,20 @@
 
 set -e
 
+# Load config from .env
+if [ -f "config/.env" ]; then
+    export $(grep -v '^#' config/.env | xargs)
+fi
+
+# Use environment variables or defaults
+HAMILCAR_PATH="${HAMILCAR_SOURCE_PATH:-/home/barker/Documents/Hamilcar}"
+CATALOGUE_PATH="${DEVEL_CATALOGUE_PATH:-/home/barker/Documents/Hasdrubal/hasdrubal_tests}"
+
 echo "Gathering Mathematica sources for Hasdrubal..."
 echo ""
 
 # Output files
-OUTPUT_FILE="hamilcar_agents/hasdrubal_sources.md"
+OUTPUT_FILE="hasdrubal_agent/hasdrubal_sources.md"
 TEMP_DIR=$(mktemp -d)
 
 # Track total tokens
@@ -46,7 +55,7 @@ echo "# Section 1: Hamilcar Package Sources" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
 HAMILCAR_OUTPUT="$TEMP_DIR/hamilcar.md"
-HAMILCAR_RESULT=$(code2prompt /home/barker/Documents/Hamilcar \
+HAMILCAR_RESULT=$(code2prompt "$HAMILCAR_PATH" \
     --include "*.m" \
     --exclude "*.mx" \
     --output-file "$HAMILCAR_OUTPUT" \
@@ -61,7 +70,7 @@ echo "" >> "$OUTPUT_FILE"
 echo "========================================" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-# Section 2: Model Catalogue from devel_catalogue
+# Section 2: Model Catalogue from hasdrubal_tests
 echo "## Processing Model Catalogue..."
 echo "" >> "$OUTPUT_FILE"
 echo "# Section 2: Model Catalogue" >> "$OUTPUT_FILE"
@@ -72,11 +81,11 @@ echo "" >> "$OUTPUT_FILE"
 CATALOGUE_TOKENS=0
 
 # Find all starter .md files that have accompanying walkthroughs
-for starter in /home/barker/Documents/Hasdrubal/devel_catalogue/*.md; do
+for starter in "$CATALOGUE_PATH"/*.md; do
     if [ -f "$starter" ]; then
         STARTER_NAME=$(basename "$starter")
         THEORY_NAME="${STARTER_NAME%.md}"
-        WALKTHROUGH="/home/barker/Documents/Hasdrubal/devel_catalogue/${THEORY_NAME}Walkthrough.m"
+        WALKTHROUGH="$CATALOGUE_PATH/${THEORY_NAME}Walkthrough.m"
 
         # Only include if walkthrough exists
         if [ -f "$WALKTHROUGH" ]; then

@@ -28,16 +28,16 @@ from collections import deque
 # Load environment
 load_dotenv("config/.env")
 
-# Add AI directory to path for local imports
-ai_dir = Path(__file__).parent
-sys.path.insert(0, str(ai_dir))
+# Add project root to path for local imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # Import agent creator
 import importlib.util
-spec = importlib.util.spec_from_file_location("hamilcar_assistant", ai_dir / "hamilcar_agents" / "hamilcar_assistant.py")
-hamilcar_assistant = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(hamilcar_assistant)
-create_hamilcar_assistant = hamilcar_assistant.create_hamilcar_assistant
+spec = importlib.util.spec_from_file_location("hasdrubal_agent", project_root / "hasdrubal_agent.py")
+hasdrubal_agent = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(hasdrubal_agent)
+create_hasdrubal_agent = hasdrubal_agent.create_hasdrubal_agent
 
 # Import from agents package
 from agents import Agent, Runner
@@ -55,11 +55,11 @@ PALE_RED_BOLD = '\033[1;91m'
 YELLOW_BOLD = '\033[1;33m'
 
 # Path to agent prompt files
-AGENTS_DIR = Path(__file__).parent / "hamilcar_agents"
+AGENTS_DIR = Path(__file__).parent.parent / "hasdrubal_agent"
 
 
 def load_prompt_file(filename: str) -> str:
-    """Load a prompt file from hamilcar_agents directory. Read fresh each time."""
+    """Load a prompt file from hasdrubal_agent directory. Read fresh each time."""
     filepath = AGENTS_DIR / filename
     if filepath.exists():
         return filepath.read_text().strip()
@@ -816,7 +816,6 @@ async def main():
         print("Get your key from: https://platform.openai.com/api-keys")
         return
 
-    project_root = ai_dir  # Hasdrubal is the project root
     sessions_dir = project_root / "sessions"
 
     # Handle session restore
@@ -880,14 +879,14 @@ async def main():
         name="Hamilcar MCP Server",
         params={
             "command": "python",
-            "args": [str(project_root / "mcp_server.py")],
+            "args": [str(project_root / "hasdrubal_agent" / "mcp_server.py")],
             "env": None
         },
         client_session_timeout_seconds=300  # 5 minutes for complex calculations
     ) as mcp_server:
 
         # Create agent with MCP server
-        agent = create_hamilcar_assistant()
+        agent = create_hasdrubal_agent()
         agent.mcp_servers = [mcp_server]
 
         display.add_conv("Connected to Hamilcar MCP Server")
