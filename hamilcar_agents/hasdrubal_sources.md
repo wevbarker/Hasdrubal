@@ -3,10 +3,9 @@
 
 This document contains the complete source code for:
 1. Hamilcar - Canonical field theory package
-2. project-glavan/Private - Additional field theory computations
-3. project-dalet/ReproductionOfResults - Reproduction results
+2. Model Catalogue - Worked examples of Dirac-Bergmann constraint analysis
 
-Sun Dec  7 01:51:35 PM CET 2025
+Thu Dec 11 10:19:36 PM CET 2025
 
 ========================================
 
@@ -123,11 +122,11 @@ Quiet@If[xAct`Hamilcar`Private`$CLI,
 		xAct`Hamilcar`Private`$WorkingDirectory=NotebookDirectory[]]];
 $Path~AppendTo~xAct`Hamilcar`Private`$WorkingDirectory;
 xAct`Hamilcar`Private`$InstallDirectory=Select[FileNameJoin[{#,"xAct/Hamilcar"}]&/@$Path,DirectoryQ][[1]];
-If[xAct`Hamilcar`Private`$CLI,	
+(*If[xAct`Hamilcar`Private`$CLI,	
 	Print@Import@FileNameJoin@{xAct`Hamilcar`Private`$InstallDirectory,
 				"Logos","ASCIILogo.txt"},
 	Print@Magnify[Import@FileNameJoin@{xAct`Hamilcar`Private`$InstallDirectory,
-				"Logos","GitLabLogo.png"},0.3]];
+				"Logos","GitLabLogo.png"},0.3]];*)
 
 (*==============*)
 (*  Disclaimer  *)
@@ -2276,39 +2275,45 @@ Expr];
 ========================================
 
 
-# Section 4: Model Catalogue
+# Section 2: Model Catalogue
 
 Each model includes a canonical formulation (Hamiltonian, fields, momenta, multipliers) followed by a walkthrough of the Dirac-Bergmann constraint analysis if available.
 
 ## KalbRamondTheory - Canonical Formulation
 
-```mathematica
-This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm.Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
-```
+This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm.
+
+Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
 
 ```mathematica
--1/8*(ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[a, b])/FirstKineticCoupling + ConjugateMomentumTwoFormFieldRank2AntisymmetricPerp1m[-a]*TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a] + 2*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*CD[b][TwoFormFieldRank2AntisymmetricPerp1m[a]] + 4*FirstKineticCoupling*CD[-b][TwoFormFieldRank2AntisymmetricPara1p[-a, -c]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]] - 2*FirstKineticCoupling*CD[-c][TwoFormFieldRank2AntisymmetricPara1p[-a, -b]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]]
+-1/8*(ConjugateMomentumCanonicalFielda5962efc[-a, -b]*ConjugateMomentumCanonicalFielda5962efc[a, b])/CouplingConstant750dbd1c + ConjugateMomentumCanonicalField640262b4[-a]*LagrangeMultiplier640262b4[a] + 2*ConjugateMomentumCanonicalFielda5962efc[-a, -b]*CD[b][CanonicalField640262b4[a]] + 4*CouplingConstant750dbd1c*CD[-b][CanonicalFielda5962efc[-a, -c]]*CD[c][CanonicalFielda5962efc[a, b]] - 2*CouplingConstant750dbd1c*CD[-c][CanonicalFielda5962efc[-a, -b]]*CD[c][CanonicalFielda5962efc[a, b]]
+```
+
+Here is a Wolfram Language statement of all the constant symbols that appear in the total Hamiltonian above.
+
+```mathematica
+{CouplingConstant750dbd1c}
 ```
 
 Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above.
 
 ```mathematica
-{TwoFormFieldRank2AntisymmetricPara1p[-a, -b], TwoFormFieldRank2AntisymmetricPerp1m[-a]}
+{CanonicalFielda5962efc[-a, -b], CanonicalField640262b4[-a]}
 ```
 
 Here is a Wolfram Language list of the conjugate momenta corresponding to the canonical fields above. Some of these momenta may not appear in the total Hamiltonian above.
 
 ```mathematica
-{ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[a, b], ConjugateMomentumTwoFormFieldRank2AntisymmetricPerp1m[a]}
+{ConjugateMomentumCanonicalFielda5962efc[a, b], ConjugateMomentumCanonicalField640262b4[a]}
 ```
 
 Here is a Wolfram Language list of the Lagrange multiplier fields introduced to enforce the primary constraints in the Hamiltonian formulation. Some of these multipliers may not appear in the total Hamiltonian above.
 
 ```mathematica
-{TwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a, -b], TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]}
+{LagrangeMultipliera5962efc[-a, -b], LagrangeMultiplier640262b4[-a]}
 ```
 
-This is the end of the provided information; you should now proceed with the algorithm.
+This is the end of the provided information; you should tell me when you've read it, and then propose the first step to start implementing the Dirac-Bergmann algorithm, in line with your earlier instructions about workflow. Wait for the user to confirm whether you should proceed with that step, and then continue step-by-step from there.
 
 
 ## KalbRamondTheory - Dirac-Bergmann Constraint Analysis Walkthrough
@@ -2333,52 +2338,50 @@ $DynamicalMetric=False;
 Print@"When we work with Poisson brackets, we smear the operands manually.";
 $ManualSmearing=True;
 Print@"Next, we need to define a bunch of things based on what we've been told. Firstly we will define the constant symbols in the theory.";
-DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"];
+DefConstantSymbol[CouplingConstant750dbd1c];
 Print@"Next we define the canonical fields in the theory. Note that the conjugate momenta are defined automatically alongside the fields.";
-DefCanonicalField[TwoFormFieldRank2AntisymmetricPara1p[-a,-b],Antisymmetric[{-a,-b}],FieldSymbol->"\[ScriptCapitalA]0p",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]0p"];
-DefCanonicalField[TwoFormFieldRank2AntisymmetricPerp1m[-a],FieldSymbol->"\[ScriptCapitalA]1m",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]1m"];
+DefCanonicalField[CanonicalFielda5962efc[-a,-b],Antisymmetric[{-a,-b}]];
+DefCanonicalField[CanonicalField640262b4[-a]];
 Print@"Next we define the multipliers in the theory.";
-DefTensor[TwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a,-b],M3,Antisymmetric[{-a,-b}],PrintAs->"\[Lambda]\[ScriptCapitalA]0p"];
-DefTensor[TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],M3,PrintAs->"\[Lambda]\[ScriptCapitalA]1m"];
+DefTensor[LagrangeMultipliera5962efc[-a,-b],M3,Antisymmetric[{-a,-b}]];
+DefTensor[LagrangeMultiplier640262b4[-a],M3];
 Print@"Now we want to define two smearing functions for each of the canonical fields, whose index structure matches those fields.";
-DefTensor[SmearingFTwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a,-b],M3,Antisymmetric[{-a,-b}],PrintAs->"\[ScriptF]"];
-DefTensor[SmearingFTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],M3,
-	PrintAs->"\[ScriptF]"];
-DefTensor[SmearingSTwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a,-b],M3,Antisymmetric[{-a,-b}],PrintAs->"\[ScriptS]"];
-DefTensor[SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],M3,
-	PrintAs->"\[ScriptS]"];
+DefTensor[SmearingOnea5962efc[-a,-b],M3,Antisymmetric[{-a,-b}]];
+DefTensor[SmearingOne640262b4[-a],M3];
+DefTensor[SmearingTwoa5962efc[-a,-b],M3,Antisymmetric[{-a,-b}]];
+DefTensor[SmearingTwo640262b4[-a],M3];
 Print@"Now we define the total Hamiltonian density for the theory.";
-TotalHamiltonianDensity=-1/8*(ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[a, b])/FirstKineticCoupling + ConjugateMomentumTwoFormFieldRank2AntisymmetricPerp1m[-a]*TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a] + 2*ConjugateMomentumTwoFormFieldRank2AntisymmetricPara1p[-a, -b]*CD[b][TwoFormFieldRank2AntisymmetricPerp1m[a]] + 4*FirstKineticCoupling*CD[-b][TwoFormFieldRank2AntisymmetricPara1p[-a, -c]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]] - 2*FirstKineticCoupling*CD[-c][TwoFormFieldRank2AntisymmetricPara1p[-a, -b]]*CD[c][TwoFormFieldRank2AntisymmetricPara1p[a, b]];
+TotalHamiltonianDensity=-1/8*(ConjugateMomentumCanonicalFielda5962efc[-a, -b]*ConjugateMomentumCanonicalFielda5962efc[a, b])/CouplingConstant750dbd1c + ConjugateMomentumCanonicalField640262b4[-a]*LagrangeMultiplier640262b4[a] + 2*ConjugateMomentumCanonicalFielda5962efc[-a, -b]*CD[b][CanonicalField640262b4[a]] + 4*CouplingConstant750dbd1c*CD[-b][CanonicalFielda5962efc[-a, -c]]*CD[c][CanonicalFielda5962efc[a, b]] - 2*CouplingConstant750dbd1c*CD[-c][CanonicalFielda5962efc[-a, -b]]*CD[c][CanonicalFielda5962efc[a, b]];
 TotalHamiltonianDensity//=Recanonicalize;
 TotalHamiltonianDensity//Print;
 Print@"The first step is to find all the primary constraints. Having been provided with the total Hamiltonian density, we could recover these by reading them off directly. It is safer, however, to proceed systematically, by taking variations with respect to the multipliers.";
-Expr=VarD[TwoFormFieldRank2AntisymmetricPara1pLagrangeMultiplier[-a,-b],CD][TotalHamiltonianDensity];
+Expr=VarD[LagrangeMultipliera5962efc[-a,-b],CD][TotalHamiltonianDensity];
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"So that is zero, and hence no primary constraint from this field. Now let's check the other one.";
-Expr=VarD[TwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],CD][TotalHamiltonianDensity];
+Expr=VarD[LagrangeMultiplier640262b4[-a],CD][TotalHamiltonianDensity];
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"Ah, so that is non-zero, and hence there are three primary constraints associated with that multiplier. Let's define a tensor to represent that those constraints.";
-DefTensor[PrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],M3,PrintAs->"\[Phi]\[ScriptCapitalA]0p"];
-FromPrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier=MakeRule[{PrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
-FromPrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier//PrependTotalFrom;
+DefTensor[PrimaryConstraint640262b4[a],M3];
+FromPrimaryConstraint640262b4=MakeRule[{PrimaryConstraint640262b4[a],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+FromPrimaryConstraint640262b4//PrependTotalFrom;
 Print@"So, the theory has three primary constraints in total. Now we need to check whether these constraints are preserved in time. We smear them with appropriate smearing functions before taking Poisson brackets with the total Hamiltonian. To compute the secondaries as (potentially indexed) tensor expressions, we then take variations with respect to the smearing functions.";
-Expr=PoissonBracket[SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]*PrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],TotalHamiltonianDensity,Parallel->True];
-Expr//=VarD[SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],CD][#]&;
+Expr=PoissonBracket[SmearingOne640262b4[-a]*PrimaryConstraint640262b4[a],TotalHamiltonianDensity];
+Expr//=VarD[SmearingOne640262b4[-a],CD][#]&;
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"Ah, so the velocities of these primaries don't vanish identically, nor is it equal to a combination of any other constraints (there are none), nor is it equal to an expression which can be set to zero for appropriate values of the multipliers. Hence we have found some secondary constraints. Specifically, we have found two secondary constraints, because the expression is the spatial divergence of a two-form in three dimensions, which is the curl of a vector (i.e. the vector to which the two-form is dual). let's define a tensor to represent those secondary constraints.";
-DefTensor[SecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],M3,PrintAs->"\[Chi]\[ScriptCapitalA]0p"];
-FromSecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier=MakeRule[{SecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
-FromSecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier//PrependTotalFrom;
+DefTensor[SecondaryConstraint640262b4[a],M3];
+FromSecondaryConstraint640262b4=MakeRule[{SecondaryConstraint640262b4[a],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+FromSecondaryConstraint640262b4//PrependTotalFrom;
 Print@"We now need to check whether the secondaries are preserved in time. We proceed as before, smearing with an appropriate smearing function and taking the Poisson bracket with the total Hamiltonian, before taking variations with respect to the smearing function to recover the indexed tensor expression.";
-Expr=PoissonBracket[SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]*SecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],TotalHamiltonianDensity,Parallel->True];
-Expr//=VarD[SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a],CD][#]&;
+Expr=PoissonBracket[SmearingOne640262b4[-a]*SecondaryConstraint640262b4[a],TotalHamiltonianDensity];
+Expr//=VarD[SmearingOne640262b4[-a],CD][#]&;
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"Ah, so the velocities of the secondaries vanish identically, and hence there are no further constraints, and we have found all the constraints in the theory. Now we need to classify the constraints into first and second class. To do this, we need to compute the Poisson brackets between all pairs of constraints.";
-Expr=PoissonBracket[SmearingFTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]*PrimaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],SmearingSTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[-a]*SecondaryConstraintTwoFormFieldRank2AntisymmetricPerp1mLagrangeMultiplier[a],Parallel->True];
+Expr=PoissonBracket[SmearingOne640262b4[-a]*PrimaryConstraint640262b4[a],SmearingTwo640262b4[-a]*SecondaryConstraint640262b4[a]];
 Expr//Print;
 Print@"Ah, so the Poisson bracket between the primaries and secondaries is vanishing. This means that both constraints are first class. We have now found and classified all the constraints in the theory. To summarise, the theory has five constraints in total: three primary and two secondary. Both constraints are first class. The total number of canonical degrees of freedom in the theory is 2*(3+3), where the 2 is from the field-momentum pairs, and the (3+3) is from the three-dimensional vector and three-dimensional two-form components of the four-dimensional two-form field. From this we subtract 2*3 degrees of freedom for the primary first class constraints, and another 2*2 degrees of freedom for the secondary first-class constraint, leaving us with 2*(3+3)-2*3-2*2=2 canonical degrees of freedom, or equivalently 1 physical degrees of freedom.";
 Quit[];
@@ -2388,33 +2391,39 @@ Quit[];
 
 ## ProcaTheory - Canonical Formulation
 
-```mathematica
-This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm.Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
-```
+This prompt provides all the information needed to implement the Dirac-Bergman Hamiltonian constraint algorithm for a specific theory. Once you have read the information below, you should proceed directly with the algorithm.
+
+Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
 
 ```mathematica
--(SquareMassCoupling*VectorFieldRank10p[]^2) + ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] + SquareMassCoupling*VectorFieldRank11m[-a]*VectorFieldRank11m[a] + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2
+-(CouplingConstant83fc4bdd*CanonicalField2a3728e5[]^2) + ConjugateMomentumCanonicalField2a3728e5[]*LagrangeMultiplier2a3728e5[] + CouplingConstant83fc4bdd*CanonicalField37d48fd1[-a]*CanonicalField37d48fd1[a] + (ConjugateMomentumCanonicalField37d48fd1[-a]*ConjugateMomentumCanonicalField37d48fd1[a])/(2*CouplingConstant750dbd1c) + ConjugateMomentumCanonicalField37d48fd1[a]*CD[-a][CanonicalField2a3728e5[]] - (CouplingConstant750dbd1c*CD[-a][CanonicalField37d48fd1[-b]]*CD[b][CanonicalField37d48fd1[a]])/2 + (CouplingConstant750dbd1c*CD[-b][CanonicalField37d48fd1[-a]]*CD[b][CanonicalField37d48fd1[a]])/2
+```
+
+Here is a Wolfram Language statement of all the constant symbols that appear in the total Hamiltonian above.
+
+```mathematica
+{CouplingConstant750dbd1c, CouplingConstant83fc4bdd}
 ```
 
 Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above.
 
 ```mathematica
-{VectorFieldRank10p[], VectorFieldRank11m[-a]}
+{CanonicalField2a3728e5[], CanonicalField37d48fd1[-a]}
 ```
 
 Here is a Wolfram Language list of the conjugate momenta corresponding to the canonical fields above. Some of these momenta may not appear in the total Hamiltonian above.
 
 ```mathematica
-{ConjugateMomentumVectorFieldRank10p[], ConjugateMomentumVectorFieldRank11m[a]}
+{ConjugateMomentumCanonicalField2a3728e5[], ConjugateMomentumCanonicalField37d48fd1[a]}
 ```
 
 Here is a Wolfram Language list of the Lagrange multiplier fields introduced to enforce the primary constraints in the Hamiltonian formulation. Some of these multipliers may not appear in the total Hamiltonian above.
 
 ```mathematica
-{VectorFieldRank10pLagrangeMultiplier[], VectorFieldRank11mLagrangeMultiplier[-a]}
+{LagrangeMultiplier2a3728e5[], LagrangeMultiplier37d48fd1[-a]}
 ```
 
-This is the end of the provided information; you should now proceed with the algorithm.
+This is the end of the provided information; you should tell me when you've read it, and then propose the first step to start implementing the Dirac-Bergmann algorithm, in line with your earlier instructions about workflow. Wait for the user to confirm whether you should proceed with that step, and then continue step-by-step from there.
 
 
 ## ProcaTheory - Dirac-Bergmann Constraint Analysis Walkthrough
@@ -2439,53 +2448,51 @@ $DynamicalMetric=False;
 Print@"When we work with Poisson brackets, we smear the operands manually.";
 $ManualSmearing=True;
 Print@"Next, we need to define a bunch of things based on what we've been told. Firstly we will define the constant symbols in the theory.";
-DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"];
-DefConstantSymbol[SecondKineticCoupling,PrintAs->"\[Beta]"];
-DefConstantSymbol[SquareMassCoupling,PrintAs->"\[Gamma]"];
+DefConstantSymbol[CouplingConstant750dbd1c];
+DefConstantSymbol[CouplingConstant83fc4bdd];
 Print@"Next we define the canonical fields in the theory. Note that the conjugate momenta are defined automatically alongside the fields.";
-DefCanonicalField[VectorFieldRank10p[],FieldSymbol->"\[ScriptCapitalA]0p",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]0p"];
-DefCanonicalField[VectorFieldRank11m[-a],FieldSymbol->"\[ScriptCapitalA]1m",MomentumSymbol->"\[CapitalPi]\[ScriptCapitalA]1m"];
+DefCanonicalField[CanonicalField2a3728e5[]];
+DefCanonicalField[CanonicalField37d48fd1[-a]];
 Print@"Next we define the multipliers in the theory.";
-DefTensor[VectorFieldRank10pLagrangeMultiplier[],M3,PrintAs->"\[Lambda]\[ScriptCapitalA]0p"];
-DefTensor[VectorFieldRank11mLagrangeMultiplier[-a],M3,PrintAs->"\[Lambda]\[ScriptCapitalA]1m"];
+DefTensor[LagrangeMultiplier2a3728e5[],M3];
+DefTensor[LagrangeMultiplier37d48fd1[-a],M3];
 Print@"Now we want to define two smearing functions for each of the canonical fields, whose index structure matches those fields.";
-DefTensor[SmearingFVectorFieldRank10p[],M3,PrintAs->"\[ScriptF]"];
-DefTensor[SmearingFVectorFieldRank11m[-a],M3,PrintAs->"\[ScriptF]"];
-DefTensor[SmearingSVectorFieldRank10p[],M3,PrintAs->"\[ScriptS]"];
-DefTensor[SmearingSVectorFieldRank11m[-a],M3,PrintAs->"\[ScriptS]"];
+DefTensor[SmearingOne2a3728e5[],M3];
+DefTensor[SmearingOne37d48fd1[-a],M3];
+DefTensor[SmearingTwo2a3728e5[],M3];
+DefTensor[SmearingTwo37d48fd1[-a],M3];
 Print@"Now we define the total Hamiltonian density for the theory.";
-TotalHamiltonianDensity=(*-(SquareMassCoupling*VectorFieldRank10p[]^2)*) + ConjugateMomentumVectorFieldRank10p[]*VectorFieldRank10pLagrangeMultiplier[] +(* SquareMassCoupling*VectorFieldRank11m[-a]*VectorFieldRank11m[a]*) + (ConjugateMomentumVectorFieldRank11m[-a]*ConjugateMomentumVectorFieldRank11m[a])/(2*FirstKineticCoupling) + ConjugateMomentumVectorFieldRank11m[a]*CD[-a][VectorFieldRank10p[]] - (FirstKineticCoupling*CD[-a][VectorFieldRank11m[-b]]*CD[b][VectorFieldRank11m[a]])/2 + (FirstKineticCoupling*CD[-b][VectorFieldRank11m[-a]]*CD[b][VectorFieldRank11m[a]])/2;
+TotalHamiltonianDensity=-(CouplingConstant83fc4bdd*CanonicalField2a3728e5[]^2) + ConjugateMomentumCanonicalField2a3728e5[]*LagrangeMultiplier2a3728e5[] + CouplingConstant83fc4bdd*CanonicalField37d48fd1[-a]*CanonicalField37d48fd1[a] + (ConjugateMomentumCanonicalField37d48fd1[-a]*ConjugateMomentumCanonicalField37d48fd1[a])/(2*CouplingConstant750dbd1c) + ConjugateMomentumCanonicalField37d48fd1[a]*CD[-a][CanonicalField2a3728e5[]] - (CouplingConstant750dbd1c*CD[-a][CanonicalField37d48fd1[-b]]*CD[b][CanonicalField37d48fd1[a]])/2 + (CouplingConstant750dbd1c*CD[-b][CanonicalField37d48fd1[-a]]*CD[b][CanonicalField37d48fd1[a]])/2;
 TotalHamiltonianDensity//Recanonicalize;
 TotalHamiltonianDensity//Print;
 Print@"The first step is to find all the primary constraints. Having been provided with the total Hamiltonian density, we could recover these by reading them off directly. It is safer, however, to proceed systematically, by taking variations with respect to the multipliers.";
-Expr=VarD[VectorFieldRank10pLagrangeMultiplier[],CD][TotalHamiltonianDensity];
+Expr=VarD[LagrangeMultiplier2a3728e5[],CD][TotalHamiltonianDensity];
 Expr//Recanonicalize;
 Expr//Print;
 Print@"So that is non-zero, and hence the theory has at least one primary constraint. let's define a tensor to represent that constraint.";
-DefTensor[PrimaryConstraintVectorFieldRank10p[],M3,PrintAs->"\[Phi]\[ScriptCapitalA]0p"];
-FromPrimaryConstraintVectorFieldRank10p=MakeRule[{PrimaryConstraintVectorFieldRank10p[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
-FromPrimaryConstraintVectorFieldRank10p//PrependTotalFrom;
+DefTensor[PrimaryConstraint2a3728e5[],M3];
+FromPrimaryConstraint2a3728e5=MakeRule[{PrimaryConstraint2a3728e5[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+FromPrimaryConstraint2a3728e5//PrependTotalFrom;
 Print@"Let's check the other one.";
-Expr=VarD[VectorFieldRank11mLagrangeMultiplier[-a],CD][TotalHamiltonianDensity];
+Expr=VarD[LagrangeMultiplier37d48fd1[-a],CD][TotalHamiltonianDensity];
 Expr//Recanonicalize;
 Expr//Print;
 Print@"Ah, so that vanishes identically, and hence there is no primary constraint associated with that multiplier. So, the theory has one primary constraint in total. Now we need to check whether it is preserved in time. Generally, the primaries might not be scalars, so we stick to the routine of smearing them with appropriate smearing functions before taking Poisson brackets with the total Hamiltonian. To compute the secondaries as (potentially indexed) tensor expressions, we then take variations with respect to the smearing functions.";
-Expr=PoissonBracket[SmearingSVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],TotalHamiltonianDensity,Parallel->True];
-Expr//=VarD[SmearingSVectorFieldRank10p[],CD][#]&;
+Expr=PoissonBracket[SmearingOne2a3728e5[]*PrimaryConstraint2a3728e5[],TotalHamiltonianDensity];
+Expr//=VarD[SmearingOne2a3728e5[],CD][#]&;
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"Ah, so the velocity of the primary doesn't vanish identically, nor is it equal to a combination of any other constraints (there are none), nor is it equal to an expression which can be set to zero for appropriate values of the multipliers. Hence we have found a secondary constraint. Let's define a tensor to represent that secondary constraint.";
-DefTensor[SecondaryConstraintVectorFieldRank10p[],M3,PrintAs->"\[Chi]\[ScriptCapitalA]0p"];
-FromSecondaryConstraintVectorFieldRank10p=MakeRule[{SecondaryConstraintVectorFieldRank10p[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
-FromSecondaryConstraintVectorFieldRank10p//PrependTotalFrom;
+DefTensor[SecondaryConstraint2a3728e5[],M3];
+FromSecondaryConstraint2a3728e5=MakeRule[{SecondaryConstraint2a3728e5[],Evaluate@Expr},MetricOn->All,ContractMetrics->True];
+FromSecondaryConstraint2a3728e5//PrependTotalFrom;
 Print@"We now have two constraints in total. Next we need to check whether the secondary is preserved in time. We proceed as before, smearing with an appropriate smearing function and taking the Poisson bracket with the total Hamiltonian, before taking variations with respect to the smearing function to recover the indexed tensor expression.";
-Expr=PoissonBracket[SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],TotalHamiltonianDensity,Parallel->True];
-Expr//=VarD[SmearingSVectorFieldRank10p[],CD][#]&;
+Expr=PoissonBracket[SmearingOne2a3728e5[]*SecondaryConstraint2a3728e5[],TotalHamiltonianDensity];
+Expr//=VarD[SmearingOne2a3728e5[],CD][#]&;
 Expr//=Recanonicalize;
 Expr//Print;
 Print@"Ah, so the velocity of the secondary doesn't vanish identically, nor is it equal to a combination of any other constraints, but it is equal to an expression which can be set to zero for appropriate values of the multipliers. Hence there are no further constraints, and we have found all the constraints in the theory. Now we need to classify the constraints into first and second class. To do this, we need to compute the Poisson brackets between all pairs of constraints.";
-Expr=PoissonBracket[SmearingFVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],SmearingSVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],Parallel->True];
-(*Expr=PoissonBracket[SmearingFVectorFieldRank10p[]*PrimaryConstraintVectorFieldRank10p[],SmearingSVectorFieldRank10p[]*SecondaryConstraintVectorFieldRank10p[],Parallel->True];*)
+Expr=PoissonBracket[SmearingOne2a3728e5[]*PrimaryConstraint2a3728e5[],SmearingTwo2a3728e5[]*SecondaryConstraint2a3728e5[]];
 Expr//Recanonicalize;
 Expr//Print;
 Print@"Ah, so the Poisson bracket between the primary and secondary constraints is non-vanishing. Since there are only two constraints in total, this means that both constraints are second class. We have now found and classified all the constraints in the theory. To summarise, the theory has two constraints in total: one primary and one secondary. Both constraints are second class. The total number of canonical degrees of freedom in the theory is 2*(1+3), where the 2 is from the field-momentum pairs, and the (1+3) is from the 0p and 1m components of the vector field. From this we subtract 1 degree of freedom for the primary constraint, and another degree of freedom for the secondary constraint, leaving us with 2*(1+3)-2=6 canonical degrees of freedom, or equivalently 3 physical degrees of freedom.";
@@ -2499,9 +2506,7 @@ Quit[];
 
 ========================================
 # Token Summary
-Hamilcar: 21954 tokens
-project-glavan/Private: 0 tokens
-project-dalet/ReproductionOfResults: 0 tokens
-Model Catalogue: 4962 tokens
-Total: 26916 tokens
+Hamilcar: 21956 tokens
+Model Catalogue: 4468 tokens
+Total: 26424 tokens
 ========================================

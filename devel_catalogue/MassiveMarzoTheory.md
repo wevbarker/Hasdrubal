@@ -3,31 +3,31 @@ This prompt provides all the information needed to implement the Dirac-Bergman H
 Here is a Wolfram Language statement of the total Hamiltonian. That is, the Legendre-transformed Lagrangian, plus multiplier fields times constraints, in which the field velocities have been replaced by momenta where possible, and by Lagrange multipliers where not.
 
 ```mathematica
-(Coupling83fc4bdd*Field2a3728e5[]^2)/2 - ConjugateMomentumField2a3728e5[]^2/Coupling750dbd1c - (Coupling83fc4bdd*Field37d48fd1[-a]*Field37d48fd1[a])/2 + ConjugateMomentumField37d48fd1[-a]*Field37d48fd1LagrangeMultiplier[a] + ConjugateMomentumField2a3728e5[]*CD[-a][Field37d48fd1[a]]
+(CouplingConstante5f53ecd*CanonicalFieldccb6bb11[]^2)/2 - ConjugateMomentumCanonicalFieldccb6bb11[]^2/CouplingConstant750dbd1c - (CouplingConstante5f53ecd*CanonicalField1ea68330[-a]*CanonicalField1ea68330[a])/2 + ConjugateMomentumCanonicalField1ea68330[-a]*LagrangeMultiplier1ea68330[a] + ConjugateMomentumCanonicalFieldccb6bb11[]*CD[-a][CanonicalField1ea68330[a]]
 ```
 
 Here is a Wolfram Language statement of all the constant symbols that appear in the total Hamiltonian above.
 
 ```mathematica
-{Coupling750dbd1c, Coupling83fc4bdd}
+{CouplingConstant750dbd1c, CouplingConstante5f53ecd}
 ```
 
 Here is a Wolfram Language list of the canonical fields used in the Hamiltonian formulation. Some of these fields may not appear in the total Hamiltonian above.
 
 ```mathematica
-{Field2a3728e5[], Field37d48fd1[-a]}
+{CanonicalFieldccb6bb11[], CanonicalField1ea68330[-a]}
 ```
 
 Here is a Wolfram Language list of the conjugate momenta corresponding to the canonical fields above. Some of these momenta may not appear in the total Hamiltonian above.
 
 ```mathematica
-{ConjugateMomentumField2a3728e5[], ConjugateMomentumField37d48fd1[a]}
+{ConjugateMomentumCanonicalFieldccb6bb11[], ConjugateMomentumCanonicalField1ea68330[a]}
 ```
 
 Here is a Wolfram Language list of the Lagrange multiplier fields introduced to enforce the primary constraints in the Hamiltonian formulation. Some of these multipliers may not appear in the total Hamiltonian above.
 
 ```mathematica
-{Field2a3728e5LagrangeMultiplier[], Field37d48fd1LagrangeMultiplier[-a]}
+{LagrangeMultiplierccb6bb11[], LagrangeMultiplier1ea68330[-a]}
 ```
 
 This is the end of the provided information; you should tell me when you've read it, and then propose the first step to start implementing the Dirac-Bergmann algorithm, in line with your earlier instructions about workflow. Wait for the user to confirm whether you should proceed with that step, and then continue step-by-step from there.

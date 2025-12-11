@@ -4,6 +4,7 @@
 
 Comment@"Set up the coupling coefficients.";
 Code[DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"]];
+Code[DefConstantSymbol[SquareMassCoupling,PrintAs->"\[Alpha]"]];
 
 Comment@"Set up a vector field.";
 Code[DefField[VectorField[a],PrintAs->"\[ScriptCapitalA]",

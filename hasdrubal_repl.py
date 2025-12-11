@@ -20,8 +20,6 @@ import uuid
 import tty
 import termios
 import argparse
-import tempfile
-import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime, timezone
@@ -55,6 +53,17 @@ GREEN_BOLD = '\033[1;32m'
 LIGHT_BLUE_BOLD = '\033[1;96m'
 PALE_RED_BOLD = '\033[1;91m'
 YELLOW_BOLD = '\033[1;33m'
+
+# Path to agent prompt files
+AGENTS_DIR = Path(__file__).parent / "hamilcar_agents"
+
+
+def load_prompt_file(filename: str) -> str:
+    """Load a prompt file from hamilcar_agents directory. Read fresh each time."""
+    filepath = AGENTS_DIR / filename
+    if filepath.exists():
+        return filepath.read_text().strip()
+    return ""
 
 
 def list_sessions(sessions_dir: Path) -> list:
@@ -255,36 +264,26 @@ class SessionLogger:
 
 
 class SplitPaneDisplay:
-    """Manages split-pane terminal display."""
+    """Manages single-pane terminal display for conversation."""
 
     def __init__(self, term_height=40, term_width=120, split_ratio=0.65):
         self.term_height = term_height
         self.term_width = term_width
-        self.split_row = int(term_height * split_ratio)
 
-        # Buffers for each pane - use larger maxlen for scrollback
-        self.log_buffer = deque(maxlen=500)
+        # Buffer for conversation pane
         self.conv_buffer = deque(maxlen=500)
 
         # Scroll offset for conversation pane (0 = showing most recent)
         self.conv_scroll_offset = 0
-        self.conv_visible_lines = term_height - self.split_row - 3
+        self.conv_visible_lines = term_height - 3
 
     def init_display(self):
-        """Initialize the split display."""
+        """Initialize the display."""
         print(CLEAR_SCREEN, end='')
-        self.draw_divider()
-
-    def draw_divider(self):
-        """Draw horizontal divider between panes."""
-        print(MOVE_CURSOR.format(self.split_row, 1), end='')
-        print("=" * self.term_width, end='', flush=True)
 
     def add_log(self, text):
-        """Add text to upper (log) pane."""
-        self.log_buffer.append(text)
-        self.redraw_log_pane()
-        self.restore_cursor_to_input()
+        """Log pane removed - silently ignore log messages."""
+        pass
 
     def add_conv(self, text):
         """Add text to lower (conversation) pane."""
@@ -356,31 +355,11 @@ class SplitPaneDisplay:
         """Restore cursor to input row."""
         print(MOVE_CURSOR.format(self.get_input_row(), 3), end='', flush=True)
 
-    def redraw_log_pane(self):
-        """Redraw entire upper pane."""
-        # Clear upper pane
-        for i in range(self.split_row - 1):
-            print(MOVE_CURSOR.format(i + 1, 1), end='')
-            print(' ' * self.term_width, end='')
-
-        # Draw log content
-        for i, line in enumerate(self.log_buffer):
-            if i >= self.split_row - 1:
-                break
-            print(MOVE_CURSOR.format(i + 1, 1), end='')
-            print(line[:self.term_width], end='', flush=True)
-
-        # Redraw divider to ensure separation
-        self.draw_divider()
-
     def redraw_conv_pane(self):
-        """Redraw entire lower pane."""
-        start_row = self.split_row + 1
-
-        # Clear lower pane
-        for i in range(self.term_height - self.split_row - 1):
-            row = start_row + i
-            print(MOVE_CURSOR.format(row, 1), end='')
+        """Redraw conversation pane."""
+        # Clear pane
+        for i in range(self.term_height - 1):
+            print(MOVE_CURSOR.format(i + 1, 1), end='')
             print(' ' * self.term_width, end='')
 
         # Calculate which lines to show based on scroll offset
@@ -398,14 +377,11 @@ class SplitPaneDisplay:
 
         # Draw conversation content
         for i, line in enumerate(visible_lines):
-            row = start_row + i
+            row = i + 1
             if row >= self.term_height:
                 break
             print(MOVE_CURSOR.format(row, 1), end='')
             print(line[:self.term_width], end='', flush=True)
-
-        # Redraw divider to ensure separation
-        self.draw_divider()
 
     def get_input_row(self):
         """Get row number for input prompt."""
@@ -427,60 +403,7 @@ class LogCapture(logging.Handler):
             self.handleError(record)
 
 
-def select_md_file_with_netrw(catalogue_dir: Path) -> str:
-    """Open vim netrw to select a .md file and return its contents."""
-    # Create temp file for vim to write selected path
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-        temp_path = f.name
-
-    # Create a vim script file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.vim', delete=False) as f:
-        vim_script_path = f.name
-        f.write(f'''
-let g:netrw_banner = 0
-let g:netrw_liststyle = 3
-let g:powerline_loaded = 1
-
-function! SelectAndQuit()
-    let l:file = expand('%:p')
-    if l:file != '' && filereadable(l:file)
-        call writefile([l:file], '{temp_path}')
-        qa!
-    endif
-endfunction
-
-autocmd BufReadPost *.md call SelectAndQuit()
-''')
-
-    try:
-        # Run vim with netrw
-        subprocess.run([
-            'vim',
-            '-S', vim_script_path,
-            str(catalogue_dir)
-        ], check=False)
-
-        os.unlink(vim_script_path)
-
-        # Read selected file path
-        if os.path.exists(temp_path):
-            with open(temp_path) as f:
-                selected_path = f.read().strip()
-            os.unlink(temp_path)
-
-            if selected_path and os.path.exists(selected_path):
-                with open(selected_path) as f:
-                    return f.read()
-    except Exception as e:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
-        if os.path.exists(vim_script_path):
-            os.unlink(vim_script_path)
-
-    return None
-
-
-def get_input_with_scroll(prompt, display, catalogue_dir=None):
+def get_input_with_scroll(prompt, display):
     """Get user input while allowing arrow keys to scroll conversation pane."""
     print(prompt, end='', flush=True)
 
@@ -510,19 +433,6 @@ def get_input_with_scroll(prompt, display, catalogue_dir=None):
             elif char == '\x04':  # Ctrl-D
                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
                 raise EOFError
-
-            elif char == '\x06':  # Ctrl-F - file picker
-                if catalogue_dir:
-                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-                    content = select_md_file_with_netrw(catalogue_dir)
-                    if content:
-                        return content
-                    # If cancelled, restore and continue
-                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
-                    print(' ' * display.term_width, end='')
-                    print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
-                    print(prompt + ''.join(input_buffer), end='', flush=True)
-                    tty.setraw(fd)
 
             elif char == '\x1b':  # Escape sequence (arrow keys)
                 next1 = sys.stdin.read(1)
@@ -559,8 +469,8 @@ def get_input_with_scroll(prompt, display, catalogue_dir=None):
         raise
 
 
-async def interactive_loop(agent, display, mcp_server, session_logger, initial_history=None, display_history=None, catalogue_dir=None):
-    """Custom interactive loop with split display."""
+async def interactive_loop(agent, display, mcp_server, session_logger, initial_history=None, display_history=None, initial_prompt=None, auto_mode=False):
+    """Custom interactive loop with display."""
 
     # Maintain conversation history
     conversation_history = initial_history or []
@@ -610,29 +520,43 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
                     display.add_conv("")
             # Skip tool result messages in display (too verbose)
 
+    # Queue initial prompt if provided via --file
+    pending_initial_prompt = initial_prompt
+    pending_is_auto = False  # Track if pending prompt is auto-injected "yes"
+
     while True:
-        # Position cursor at input row
-        print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
-        print(' ' * display.term_width, end='')  # Clear line
-        print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+        # Use initial prompt from --file or auto-injected "yes" if available
+        if pending_initial_prompt:
+            user_input = pending_initial_prompt
+            is_auto_yes = pending_is_auto
+            pending_initial_prompt = None
+            pending_is_auto = False
+        else:
+            is_auto_yes = False
+            # Position cursor at input row
+            print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
+            print(' ' * display.term_width, end='')  # Clear line
+            print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
 
-        # Get user input with arrow key scrolling
-        try:
-            user_input = get_input_with_scroll("> ", display, catalogue_dir).strip()
-        except (EOFError, KeyboardInterrupt):
-            break
+            # Get user input with arrow key scrolling
+            try:
+                user_input = get_input_with_scroll("> ", display).strip()
+            except (EOFError, KeyboardInterrupt):
+                break
 
-        if user_input.lower() in ['quit', 'exit', 'q']:
-            break
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                break
 
-        if not user_input:
-            continue
+            if not user_input:
+                continue
 
         # Add user prompt to conversation pane
-        display.add_conv(f"{GREEN_BOLD}> {user_input}{RESET}")
-
-        # Log user input
-        session_logger.log_user(user_input)
+        if is_auto_yes:
+            display.add_conv(f"{GREEN_BOLD}> [AUTO] {user_input}{RESET}")
+            session_logger.log_user(f"[AUTO] {user_input}")
+        else:
+            display.add_conv(f"{GREEN_BOLD}> {user_input}{RESET}")
+            session_logger.log_user(user_input)
 
         # Track Wolfram code for this turn (code + result pairs)
         wl_codes = []
@@ -709,29 +633,29 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
         try:
             # Build user message with visibility hack preamble if needed
             if previous_tool_calls:
-                # Format previous tool calls as preamble
-                preamble_lines = [
-                    "[SYSTEM NOTE: You are running through OpenAI Agents SDK which has a known bug where tool calls may not be visible to the model. In case you cannot see what you did in the previous turn, here is a copy of your tool calls and their results:",
-                    ""
-                ]
+                # Format previous tool calls
+                tool_calls_text = []
                 for i, (code, result_text, messages_text) in enumerate(previous_tool_calls, 1):
-                    preamble_lines.append(f"Tool call {i}: {code}")
+                    tool_calls_text.append(f"Tool call {i}: {code}")
                     # Truncate very long results
                     if len(result_text) > 500:
                         result_text = result_text[:500] + "... (truncated)"
-                    preamble_lines.append(f"Output: {result_text}")
+                    tool_calls_text.append(f"Output: {result_text}")
                     if messages_text:
                         if len(messages_text) > 300:
                             messages_text = messages_text[:300] + "... (truncated)"
-                        preamble_lines.append(f"Kernel Messages: {messages_text}")
-                    preamble_lines.append("")
+                        tool_calls_text.append(f"Kernel Messages: {messages_text}")
+                    tool_calls_text.append("")
 
-                preamble_lines.append("If you can already see these tool calls above, disregard this note.]")
-                preamble_lines.append("")
-                preamble_lines.append("User message:")
-                preamble = "\n".join(preamble_lines)
+                # Load reminder template and substitute tool calls
+                reminder_template = load_prompt_file("reminder.md")
+                if reminder_template and "{tool_calls}" in reminder_template:
+                    preamble = reminder_template.replace("{tool_calls}", "\n".join(tool_calls_text))
+                else:
+                    # Fallback if template missing or malformed
+                    preamble = "[Tool calls from previous turn:\n" + "\n".join(tool_calls_text) + "]"
 
-                augmented_input = f"{preamble}\n{user_input}"
+                augmented_input = f"{preamble}\n\nUser message:\n{user_input}"
             else:
                 augmented_input = user_input
 
@@ -739,6 +663,35 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
             conversation_history.append({"role": "user", "content": augmented_input})
 
             result = await Runner.run(agent, conversation_history)
+
+            # Challenge: forgot tool call - agent replies without tool calls
+            # Skip on first response (agent is just acknowledging the prompt)
+            is_first_response = len([m for m in conversation_history if m["role"] == "assistant"]) == 0
+            if not tool_call_records and not is_first_response:
+                challenge_msg = load_prompt_file("challenge_forgot_tool_call.md")
+                if challenge_msg:
+                    response = result.final_output
+
+                    # Log the agent's response before challenge
+                    session_logger.log_assistant(response)
+                    conversation_history.append({"role": "assistant", "content": response})
+
+                    # Show agent response in conversation pane
+                    display.add_conv(f"{LIGHT_BLUE_BOLD}Hasdrubal: {response}{RESET}")
+                    display.add_conv("")
+
+                    # Show and log challenge as automated user message
+                    display.add_conv(f"{GREEN_BOLD}> [AUTO-CHALLENGE]{RESET}")
+                    display.add_conv(f"{GREEN_BOLD}> {challenge_msg}{RESET}")
+                    display.add_conv("")
+                    session_logger.log_user(f"[AUTO-CHALLENGE] {challenge_msg}")
+                    conversation_history.append({"role": "user", "content": challenge_msg})
+
+                    display.add_log(f"{YELLOW_BOLD}Challenge: forgot_tool_call{RESET}")
+
+                    # Clear and re-run
+                    tool_call_records.clear()
+                    result = await Runner.run(agent, conversation_history)
 
             # Show WL codes, outputs, and messages in conversation pane
             if tool_call_records:
@@ -767,8 +720,63 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
             # Add assistant response to history
             conversation_history.append({"role": "assistant", "content": response})
 
+            # Check for challenge triggers
+            challenges_triggered = []
+
+            # Challenge: cavalier constraint - agent mentions DefTensor
+            if "DefTensor" in response:
+                challenges_triggered.append("challenge_cavalier_constraint.md")
+
+            # Challenge: gloss over error - tool call had kernel messages (warnings/errors)
+            if tool_call_records:
+                for code, output, messages in tool_call_records:
+                    if messages:
+                        challenges_triggered.append("challenge_gloss_over_error.md")
+                        break
+
+            # Issue challenges if any triggered (concatenated together)
+            if challenges_triggered:
+                challenge_msgs = []
+                for challenge_file in challenges_triggered:
+                    msg = load_prompt_file(challenge_file)
+                    if msg:
+                        challenge_msgs.append(msg)
+
+                if challenge_msgs:
+                    combined_challenge = "\n\n".join(challenge_msgs)
+                    display.add_conv(f"{GREEN_BOLD}> [AUTO-CHALLENGE]{RESET}")
+                    display.add_conv(f"{GREEN_BOLD}> {combined_challenge}{RESET}")
+                    display.add_conv("")
+                    session_logger.log_user(f"[AUTO-CHALLENGE] {combined_challenge}")
+                    conversation_history.append({"role": "user", "content": combined_challenge})
+
+                    display.add_log(f"{YELLOW_BOLD}Challenges triggered: {', '.join(challenges_triggered)}{RESET}")
+
+                    # Re-run agent with challenge
+                    tool_call_records.clear()
+                    result = await Runner.run(agent, conversation_history)
+
+                    # Show new response
+                    response = result.final_output
+                    display.add_conv(f"{LIGHT_BLUE_BOLD}Hasdrubal: {response}{RESET}")
+                    display.add_conv("")
+                    session_logger.log_assistant(response)
+                    conversation_history.append({"role": "assistant", "content": response})
+
             # Update previous_tool_calls for next turn's visibility hack
             previous_tool_calls = tool_call_records
+
+            # In auto mode, inject "yes" as next input (unless TERMINATE or ABORT detected)
+            if auto_mode:
+                if "TERMINATE" in response:
+                    display.add_conv(f"{YELLOW_BOLD}[TERMINATE detected - exiting auto mode]{RESET}")
+                    auto_mode = False  # Exit auto mode, return to manual input
+                elif "ABORT" in response:
+                    display.add_conv(f"{YELLOW_BOLD}[ABORT detected - exiting auto mode]{RESET}")
+                    auto_mode = False  # Exit auto mode, return to manual input
+                else:
+                    pending_initial_prompt = "yes"
+                    pending_is_auto = True
 
         except Exception as e:
             display.add_conv(f"Error: {str(e)}")
@@ -786,7 +794,21 @@ async def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description="Hasdrubal Interactive REPL")
     parser.add_argument("--restore", action="store_true", help="Restore a previous session")
+    parser.add_argument("-f", "--file", type=str, help="Path to .md file for initial prompt")
+    parser.add_argument("-a", "--auto", action="store_true", help="Automatic mode: auto-reply 'yes' after each agent response")
     args = parser.parse_args()
+
+    # Handle --file option
+    initial_prompt = None
+    if args.file:
+        file_path = Path(args.file)
+        if not file_path.exists():
+            print(f"Error: File not found: {args.file}")
+            return
+        if not file_path.suffix == ".md":
+            print(f"Error: File must be .md: {args.file}")
+            return
+        initial_prompt = file_path.read_text()
 
     # Check API key
     if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "your-api-key-here":
@@ -861,7 +883,7 @@ async def main():
             "args": [str(project_root / "mcp_server.py")],
             "env": None
         },
-        client_session_timeout_seconds=60
+        client_session_timeout_seconds=300  # 5 minutes for complex calculations
     ) as mcp_server:
 
         # Create agent with MCP server
@@ -891,8 +913,7 @@ async def main():
         display.add_conv("")
 
         # Run interactive loop
-        catalogue_dir = project_root / "devel_catalogue"
-        await interactive_loop(agent, display, mcp_server, session_logger, initial_history, display_history, catalogue_dir)
+        await interactive_loop(agent, display, mcp_server, session_logger, initial_history, display_history, initial_prompt, args.auto)
 
         # Cleanup
         session_logger.close()

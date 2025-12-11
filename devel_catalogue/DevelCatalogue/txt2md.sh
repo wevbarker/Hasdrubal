@@ -7,10 +7,10 @@
 # deterministic 8-character hashes.
 #
 # Example transformations:
-#   xAct`PSALTer`VectorField`Rank10p[] -> Field<hash>[]
-#   xAct`PSALTer`VectorField`Rank10pConjugateMomentum[] -> ConjugateMomentumField<hash>[]
-#   xAct`PSALTer`VectorField`Rank10pLagrangeMultiplier[] -> Field<hash>LagrangeMultiplier[]
-#   FirstKineticCoupling -> Coupling<hash>
+#   xAct`PSALTer`VectorField`Rank10p[] -> CanonicalField<hash>[]
+#   xAct`PSALTer`VectorField`Rank10pConjugateMomentum[] -> ConjugateMomentumCanonicalField<hash>[]
+#   xAct`PSALTer`VectorField`Rank10pLagrangeMultiplier[] -> LagrangeMultiplier<hash>[]
+#   FirstKineticCoupling -> CouplingConstant<hash>
 
 input_file="$1"
 output_file="${input_file%.txt}.md"
@@ -44,11 +44,12 @@ unset IFS
 sed_constants=""
 for const in "${constants_sorted[@]}"; do
     hash=$(hash_name "$const")
-    sed_constants="${sed_constants}s/${const}/Coupling${hash}/g;"
+    sed_constants="${sed_constants}s/${const}/CouplingConstant${hash}/g;"
 done
 
 # Extract full field identifiers from line 7 (canonical fields list)
 # Format: {xAct`PSALTer`VectorField`Rank10p[], xAct`PSALTer`VectorField`Rank11m[-a]}
+# May also have multi-index fields like: xAct`PSALTer`FirstTwoFormField`Rank2AntisymmetricPara1p[-a, -b]
 canonical_fields_line=$(sed -n '7p' "$input_file")
 
 # Extract full field identifiers (e.g., VectorFieldRank10p, VectorFieldRank11m)
@@ -64,20 +65,20 @@ while IFS= read -r match; do
     if [[ ! " ${field_ids[*]} " =~ " ${full_id} " ]]; then
         field_ids+=("$full_id")
     fi
-done < <(echo "$canonical_fields_line" | grep -oE "xAct\`PSALTer\`[A-Za-z]+\`[A-Za-z0-9]+\[-?[a-z]*\]")
+done < <(echo "$canonical_fields_line" | grep -oP "xAct.PSALTer.[A-Za-z]+.[A-Za-z0-9]+\[[-a-z, ]*\]")
 
 # Build sed replacement commands for all field variants
 sed_fields=""
 for full_id in "${field_ids[@]}"; do
     hash=$(hash_name "$full_id")
-    # Replace ConjugateMomentum<full_id> -> ConjugateMomentumField<hash>
-    sed_fields="${sed_fields}s/ConjugateMomentum${full_id}/ConjugateMomentumField${hash}/g;"
-    # Replace <full_id>LagrangeMultiplier -> Field<hash>LagrangeMultiplier
-    sed_fields="${sed_fields}s/${full_id}LagrangeMultiplier/Field${hash}LagrangeMultiplier/g;"
-    # Replace <full_id>CanonicalField -> Field<hash> (before stripping CanonicalField)
-    sed_fields="${sed_fields}s/${full_id}CanonicalField/Field${hash}/g;"
-    # Replace bare <full_id> -> Field<hash> (must come last to not interfere with above)
-    sed_fields="${sed_fields}s/${full_id}/Field${hash}/g;"
+    # Replace ConjugateMomentum<full_id> -> ConjugateMomentumCanonicalField<hash>
+    sed_fields="${sed_fields}s/ConjugateMomentum${full_id}/ConjugateMomentumCanonicalField${hash}/g;"
+    # Replace <full_id>LagrangeMultiplier -> LagrangeMultiplier<hash>
+    sed_fields="${sed_fields}s/${full_id}LagrangeMultiplier/LagrangeMultiplier${hash}/g;"
+    # Replace <full_id>CanonicalField -> CanonicalField<hash> (before stripping CanonicalField)
+    sed_fields="${sed_fields}s/${full_id}CanonicalField/CanonicalField${hash}/g;"
+    # Replace bare <full_id> -> CanonicalField<hash> (must come last to not interfere with above)
+    sed_fields="${sed_fields}s/${full_id}/CanonicalField${hash}/g;"
 done
 
 # Combine all sed commands

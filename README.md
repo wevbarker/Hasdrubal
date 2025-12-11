@@ -49,7 +49,7 @@ Ask questions about canonical field theory:
 ## Architecture
 
 ```
-User Prompt → GPT-4o Agent → MCP Tools → Wolfram Kernel → Hamilcar Package
+User Prompt → GPT-5.1 Agent → MCP Tools → Wolfram Kernel → Hamilcar Package
 ```
 
 ### Components
@@ -63,9 +63,6 @@ User Prompt → GPT-4o Agent → MCP Tools → Wolfram Kernel → Hamilcar Packa
 - `evaluate_wolfram`: Execute arbitrary Wolfram Language code
 - `define_canonical_field`: DefCanonicalField wrapper
 - `poisson_bracket`: PoissonBracket computation
-- `find_algebra`: Constraint algebra analysis
-- `reload_hamilcar`: Reload package sources
-- `restart_kernel`: Fresh kernel session
 
 ## Requirements
 

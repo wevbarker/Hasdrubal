@@ -119,36 +119,6 @@ async def list_tools() -> list[Tool]:
                 "required": ["operator1", "operator2"]
             }
         ),
-        Tool(
-            name="find_algebra",
-            description="Determine constraint algebra coefficients using FindAlgebra",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "ansatz": {
-                        "type": "string",
-                        "description": "Ansatz expression for algebra structure"
-                    }
-                },
-                "required": ["ansatz"]
-            }
-        ),
-        Tool(
-            name="reload_hamilcar",
-            description="Reload Hamilcar sources (useful during development)",
-            inputSchema={
-                "type": "object",
-                "properties": {}
-            }
-        ),
-        Tool(
-            name="restart_kernel",
-            description="Restart the Wolfram kernel (clears all definitions)",
-            inputSchema={
-                "type": "object",
-                "properties": {}
-            }
-        )
     ]
 
 
@@ -197,24 +167,6 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             if messages:
                 response += f"\n\n[Kernel Messages]\n{messages}"
             return [TextContent(type="text", text=response)]
-
-        elif name == "find_algebra":
-            ansatz = arguments["ansatz"]
-            code = f"FindAlgebra[{ansatz}]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
-            return [TextContent(type="text", text=response)]
-
-        elif name == "reload_hamilcar":
-            result = kernel.evaluate("RereadSources[]")
-            return [TextContent(type="text", text="Hamilcar sources reloaded")]
-
-        elif name == "restart_kernel":
-            kernel.restart()
-            return [TextContent(type="text", text="Kernel restarted and Hamilcar reloaded")]
 
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]

@@ -8,7 +8,7 @@ echo "Gathering Mathematica sources for Hasdrubal..."
 echo ""
 
 # Output files
-OUTPUT_FILE="hasdrubal_sources.md"
+OUTPUT_FILE="hamilcar_agents/hasdrubal_sources.md"
 TEMP_DIR=$(mktemp -d)
 
 # Track total tokens
@@ -31,8 +31,7 @@ cat > "$OUTPUT_FILE" << 'HEADER'
 
 This document contains the complete source code for:
 1. Hamilcar - Canonical field theory package
-2. project-glavan/Private - Additional field theory computations
-3. project-dalet/ReproductionOfResults - Reproduction results
+2. Model Catalogue - Worked examples of Dirac-Bergmann constraint analysis
 
 HEADER
 date >> "$OUTPUT_FILE"
@@ -62,45 +61,10 @@ echo "" >> "$OUTPUT_FILE"
 echo "========================================" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-# Section 2: project-glavan/Private (commented out - too large)
-# echo "## Processing project-glavan/Private..."
-# echo "" >> "$OUTPUT_FILE"
-# echo "# Section 2: project-glavan/Private Sources" >> "$OUTPUT_FILE"
-# echo "" >> "$OUTPUT_FILE"
-#
-# GLAVAN_OUTPUT="$TEMP_DIR/glavan.md"
-# GLAVAN_RESULT=$(code2prompt /home/barker/Documents/project-glavan/Private \
-#     --include "*.m" \
-#     --exclude "*.mx" \
-#     --output-file "$GLAVAN_OUTPUT" \
-#     --tokens "raw" 2>&1)
-#
-# GLAVAN_TOKENS=$(echo "$GLAVAN_RESULT" | grep -oP 'Token count: \K[0-9]+' | head -1 || echo "0")
-# echo "   project-glavan/Private: $GLAVAN_TOKENS tokens"
-# TOTAL_TOKENS=$((TOTAL_TOKENS + GLAVAN_TOKENS))
-#
-# cat "$GLAVAN_OUTPUT" >> "$OUTPUT_FILE"
-# echo "" >> "$OUTPUT_FILE"
-# echo "========================================" >> "$OUTPUT_FILE"
-# echo "" >> "$OUTPUT_FILE"
-GLAVAN_TOKENS=0
-
-# Section 3: project-dalet/ReproductionOfResults (commented out)
-# echo "## Processing project-dalet/ReproductionOfResults..."
-# DALET_OUTPUT="$TEMP_DIR/dalet.md"
-# DALET_RESULT=$(code2prompt /home/barker/Documents/project-dalet/ReproductionOfResults \
-#     --include "*.m" \
-#     --exclude "*.mx" \
-#     --output-file "$DALET_OUTPUT" \
-#     --tokens "raw" 2>&1)
-# DALET_TOKENS=$(echo "$DALET_RESULT" | grep -oP 'Token count: \K[0-9]+' | head -1 || echo "0")
-# cat "$DALET_OUTPUT" >> "$OUTPUT_FILE"
-DALET_TOKENS=0
-
-# Section 4: Model Catalogue from devel_catalogue
+# Section 2: Model Catalogue from devel_catalogue
 echo "## Processing Model Catalogue..."
 echo "" >> "$OUTPUT_FILE"
-echo "# Section 4: Model Catalogue" >> "$OUTPUT_FILE"
+echo "# Section 2: Model Catalogue" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 echo "Each model includes a canonical formulation (Hamiltonian, fields, momenta, multipliers) followed by a walkthrough of the Dirac-Bergmann constraint analysis if available." >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
@@ -167,8 +131,6 @@ echo ""
 echo "========================================" >> "$OUTPUT_FILE"
 echo "# Token Summary" >> "$OUTPUT_FILE"
 echo "Hamilcar: $HAMILCAR_TOKENS tokens" >> "$OUTPUT_FILE"
-echo "project-glavan/Private: $GLAVAN_TOKENS tokens" >> "$OUTPUT_FILE"
-echo "project-dalet/ReproductionOfResults: $DALET_TOKENS tokens" >> "$OUTPUT_FILE"
 echo "Model Catalogue: $CATALOGUE_TOKENS tokens" >> "$OUTPUT_FILE"
 echo "Total: $TOTAL_TOKENS tokens" >> "$OUTPUT_FILE"
 echo "========================================" >> "$OUTPUT_FILE"
@@ -178,22 +140,20 @@ echo "========================================"
 echo "TOKEN SUMMARY"
 echo "========================================"
 echo "Hamilcar:                      $HAMILCAR_TOKENS"
-echo "project-glavan/Private:        $GLAVAN_TOKENS"
-echo "project-dalet/ReproductionOfResults: $DALET_TOKENS"
 echo "Model Catalogue:               $CATALOGUE_TOKENS"
 echo "----------------------------------------"
 echo "TOTAL:                         $TOTAL_TOKENS tokens"
 echo "========================================"
 echo ""
 
-# GPT-4o context limit check
-GPT4O_LIMIT=128000
-if [ "$TOTAL_TOKENS" -gt "$GPT4O_LIMIT" ]; then
-    echo "WARNING: Total tokens ($TOTAL_TOKENS) exceeds GPT-4o limit ($GPT4O_LIMIT)"
+# GPT-5.1 context limit check
+GPT51_LIMIT=272000
+if [ "$TOTAL_TOKENS" -gt "$GPT51_LIMIT" ]; then
+    echo "WARNING: Total tokens ($TOTAL_TOKENS) exceeds GPT-5.1 limit ($GPT51_LIMIT)"
     echo "Consider excluding some sources or using selective includes."
 else
-    REMAINING=$((GPT4O_LIMIT - TOTAL_TOKENS))
-    echo "Within GPT-4o limit. Remaining capacity: $REMAINING tokens"
+    REMAINING=$((GPT51_LIMIT - TOTAL_TOKENS))
+    echo "Within GPT-5.1 limit. Remaining capacity: $REMAINING tokens"
 fi
 
 echo ""

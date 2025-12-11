@@ -5,33 +5,21 @@ A general-purpose AI agent for canonical field theory calculations using Hamilca
 Handles field definitions, Poisson brackets, constraint algebras, and general field theory queries.
 """
 
-from agents import Agent
+from agents import Agent, ModelSettings
+from agents.model_settings import Reasoning
 from typing import List
 from pathlib import Path
 
 
 def load_system_prompt() -> str:
-    """Load system prompt from markdown files.
-
-    Loads two files:
-    1. system_prompt.md - Hamilcar functionality and examples
-    2. interaction_instructions.md - Communication style and interaction guidelines
-    """
+    """Load system prompt from markdown file."""
     base_path = Path(__file__).parent
 
-    # Load Hamilcar functionality
     prompt_path = base_path / "system_prompt.md"
     if not prompt_path.exists():
         raise FileNotFoundError(f"System prompt not found: {prompt_path}")
-    system_prompt = prompt_path.read_text()
 
-    # Load interaction instructions
-    instructions_path = base_path / "interaction_instructions.md"
-    if not instructions_path.exists():
-        raise FileNotFoundError(f"Interaction instructions not found: {instructions_path}")
-    interaction_instructions = instructions_path.read_text()
-
-    return system_prompt + "\n\n" + interaction_instructions
+    return prompt_path.read_text()
 
 
 def create_hamilcar_assistant() -> Agent:
@@ -44,8 +32,8 @@ def create_hamilcar_assistant() -> Agent:
     # Load system prompt from markdown file
     system_prompt = load_system_prompt()
 
-    # Load source context if available
-    sources_path = Path(__file__).parent.parent / "hasdrubal_sources.md"
+    # Load source context if available (alongside system_prompt.md)
+    sources_path = Path(__file__).parent / "hasdrubal_sources.md"
 
     if sources_path.exists():
         sources_content = sources_path.read_text()
@@ -57,7 +45,10 @@ def create_hamilcar_assistant() -> Agent:
     agent = Agent(
         name="Hasdrubal",
         instructions=full_prompt,
-        model="gpt-5.1",  # Requires openai-agents >= 0.6.0
+        model="gpt-5.2",
+        model_settings=ModelSettings(
+            reasoning=Reasoning(effort="medium"),
+        ),
         tools=[],  # MCP tools will be added separately
     )
 
@@ -78,5 +69,5 @@ Capabilities:
 - Index notation handling
 - Physics interpretation
 
-Uses OpenAI GPT-4o with MCP tools for Wolfram/Hamilcar access.
+Uses OpenAI GPT-5.1 with MCP tools for Wolfram/Hamilcar access.
 """
