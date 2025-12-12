@@ -550,13 +550,11 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
             if not user_input:
                 continue
 
-        # Add user prompt to conversation pane
+        # Add user prompt to conversation pane (display clean input, log later with injection)
         if is_auto_yes:
             display.add_conv(f"{GREEN_BOLD}> [AUTO] {user_input}{RESET}")
-            session_logger.log_user(f"[AUTO] {user_input}")
         else:
             display.add_conv(f"{GREEN_BOLD}> {user_input}{RESET}")
-            session_logger.log_user(user_input)
 
         # Track Wolfram code for this turn (code + result pairs)
         wl_codes = []
@@ -567,62 +565,51 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
         async def capture_call_tool(tool_name, arguments):
             timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
-            # Build WL code representation
-            wl_code = None
-            if tool_name == "evaluate_wolfram":
-                wl_code = arguments.get('code', 'N/A')
-            elif tool_name == "define_canonical_field":
-                field_expr = arguments.get('field_expr', '?')
-                field_symbol = arguments.get('field_symbol')
-                momentum_symbol = arguments.get('momentum_symbol')
-                options = []
-                if field_symbol:
-                    options.append(f'FieldSymbol->"{field_symbol}"')
-                if momentum_symbol:
-                    options.append(f'MomentumSymbol->"{momentum_symbol}"')
-                options_str = ", " + ", ".join(options) if options else ""
-                wl_code = f"DefCanonicalField[{field_expr}{options_str}]"
-            elif tool_name == "poisson_bracket":
-                op1 = arguments.get('operator1', '?')
-                op2 = arguments.get('operator2', '?')
-                wl_code = f"PoissonBracket[{op1}, {op2}]"
-            else:
-                wl_code = f"{tool_name}({arguments})"
-
-            # Add to log pane
-            display.add_log(f"{GRAY}[{timestamp}]{RESET} WOLFRAM: {wl_code}")
-
-            # Store for conversation pane
-            if wl_code and tool_name in ["evaluate_wolfram", "define_canonical_field", "poisson_bracket"]:
-                wl_codes.append(wl_code)
-
             # Log tool call
             session_logger.log_tool_call(tool_name, arguments)
 
             # Execute
             result = await original_call_tool(tool_name, arguments)
 
-            # Log result and store for visibility hack
+            # Extract executed code and result from response
+            wl_code = None
             result_text = ""
             messages_text = ""
             if hasattr(result, 'content') and result.content:
                 full_result = result.content[0].text
-                # Separate result from kernel messages
-                if "\n\n[Kernel Messages]\n" in full_result:
-                    result_text, messages_text = full_result.split("\n\n[Kernel Messages]\n", 1)
+
+                # Extract executed code from [Executed]...[/Executed] block
+                import re
+                executed_match = re.search(r'\[Executed\]\n(.*?)\n\[/Executed\]', full_result, re.DOTALL)
+                if executed_match:
+                    wl_code = executed_match.group(1)
+                    # Remove the executed block from the result text
+                    remaining = full_result[executed_match.end():].lstrip('\n')
                 else:
-                    result_text = full_result
+                    # Fallback for unknown tools
+                    wl_code = f"{tool_name}({arguments})"
+                    remaining = full_result
+
+                # Separate result from kernel messages
+                if "\n\n[Kernel Messages]\n" in remaining:
+                    result_text, messages_text = remaining.split("\n\n[Kernel Messages]\n", 1)
+                else:
+                    result_text = remaining
+
                 # Log full result (including messages)
                 session_logger.log_tool_result(tool_name, full_result)
-                # Truncate for display in log pane
+
+                # Display in log pane
+                display.add_log(f"{GRAY}[{timestamp}]{RESET} WOLFRAM: {wl_code}")
                 display_text = result_text[:150] + "..." if len(result_text) > 150 else result_text
                 display.add_log(f"{GRAY}[{timestamp}]{RESET} RESULT: {display_text}")
                 if messages_text:
                     msg_display = messages_text[:100] + "..." if len(messages_text) > 100 else messages_text
                     display.add_log(f"{YELLOW_BOLD}[{timestamp}] MESSAGES: {msg_display}{RESET}")
 
-            # Store for visibility hack (full result, not truncated)
-            if wl_code and tool_name in ["evaluate_wolfram", "define_canonical_field", "poisson_bracket"]:
+            # Store for conversation pane and visibility hack
+            if wl_code and tool_name.startswith("tool_"):
+                wl_codes.append(wl_code)
                 tool_call_records.append((wl_code, result_text, messages_text))
 
             return result
@@ -658,6 +645,12 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
                 augmented_input = f"{preamble}\n\nUser message:\n{user_input}"
             else:
                 augmented_input = user_input
+
+            # Log the full augmented input (including injection if present)
+            if is_auto_yes:
+                session_logger.log_user(f"[AUTO] {augmented_input}")
+            else:
+                session_logger.log_user(augmented_input)
 
             # Add user message to history (with preamble if applicable)
             conversation_history.append({"role": "user", "content": augmented_input})
@@ -781,6 +774,7 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
         except Exception as e:
             display.add_conv(f"Error: {str(e)}")
             display.add_log(f"ERROR: {str(e)}")
+            session_logger.log("error", str(e))
             # Clear previous tool calls on error
             previous_tool_calls = []
 

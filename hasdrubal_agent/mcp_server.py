@@ -102,7 +102,7 @@ async def list_tools() -> list[Tool]:
         # Hamilcar: PoissonBracket
         Tool(
             name="tool_PoissonBracket",
-            description="Compute Poisson bracket between two operators",
+            description="Compute Poisson bracket between two operators and store result",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -113,24 +113,28 @@ async def list_tools() -> list[Tool]:
                     "operator2": {
                         "type": "string",
                         "description": "Second operator in Wolfram Language syntax"
+                    },
+                    "result_name": {
+                        "type": "string",
+                        "description": "Variable name to store the result"
                     }
                 },
-                "required": ["operator1", "operator2"]
+                "required": ["operator1", "operator2", "result_name"]
             }
         ),
         # Hamilcar: TotalFrom
         Tool(
             name="tool_TotalFrom",
-            description="Expand composite quantities to canonical variables (fields, momenta, constants)",
+            description="Expand a variable in-place to canonical variables (fields, momenta, constants). Pass variable name only, not an expression.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "expression": {
+                    "variable": {
                         "type": "string",
-                        "description": "Expression to expand"
+                        "description": "Variable name to expand in-place (not an expression)"
                     }
                 },
-                "required": ["expression"]
+                "required": ["variable"]
             }
         ),
         # Hamilcar: PrependTotalFrom
@@ -151,16 +155,16 @@ async def list_tools() -> list[Tool]:
         # Hamilcar: Recanonicalize
         Tool(
             name="tool_Recanonicalize",
-            description="Convert expression to canonical form (standard ordering of tensor expressions)",
+            description="Canonicalize a variable in-place (standard ordering of tensor expressions). Pass variable name only, not an expression.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "expression": {
+                    "variable": {
                         "type": "string",
-                        "description": "Expression to canonicalize"
+                        "description": "Variable name to canonicalize in-place (not an expression)"
                     }
                 },
-                "required": ["expression"]
+                "required": ["variable"]
             }
         ),
         # xAct: DefConstantSymbol
@@ -200,7 +204,7 @@ async def list_tools() -> list[Tool]:
         # xAct: VarD
         Tool(
             name="tool_VarD",
-            description="Compute variational derivative of an expression with respect to a tensor",
+            description="Compute variational derivative of an expression with respect to a tensor and store result",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -211,9 +215,13 @@ async def list_tools() -> list[Tool]:
                     "expression": {
                         "type": "string",
                         "description": "Scalar expression to differentiate"
+                    },
+                    "result_name": {
+                        "type": "string",
+                        "description": "Variable name to store the result"
                     }
                 },
-                "required": ["tensor", "expression"]
+                "required": ["tensor", "expression", "result_name"]
             }
         ),
         # xAct: MakeRule
@@ -242,6 +250,14 @@ async def list_tools() -> list[Tool]:
     ]
 
 
+def format_response(code: str, result: str, messages: str = None) -> str:
+    """Format tool response with executed code prefix."""
+    response = f"[Executed]\n{code}\n[/Executed]\n\n{result}"
+    if messages:
+        response += f"\n\n[Kernel Messages]\n{messages}"
+    return response
+
+
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     """Handle tool calls."""
@@ -251,9 +267,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         if name == "tool_GenericWolframScript":
             code = arguments["code"]
             result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, str(result), messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_DefCanonicalField":
@@ -266,30 +280,25 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                 code = f"DefCanonicalField[{field_expr}]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = f"Field defined: {result}"
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"Field defined: {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_PoissonBracket":
             op1 = arguments["operator1"]
             op2 = arguments["operator2"]
-            code = f"PoissonBracket[{op1}, {op2}]"
+            result_name = arguments["result_name"]
+            code = f"{result_name} = PoissonBracket[{op1}, {op2}]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"{result_name} = {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_TotalFrom":
-            expression = arguments["expression"]
-            code = f"TotalFrom[{expression}]"
+            variable = arguments["variable"]
+            code = f"{variable} //= TotalFrom"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"{variable} = {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_PrependTotalFrom":
@@ -297,19 +306,15 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             code = f"{rule} // PrependTotalFrom"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = f"Rule registered: {result}"
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"Rule registered: {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_Recanonicalize":
-            expression = arguments["expression"]
-            code = f"Recanonicalize[{expression}]"
+            variable = arguments["variable"]
+            code = f"{variable} //= Recanonicalize"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"{variable} = {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_DefConstantSymbol":
@@ -317,9 +322,7 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             code = f"DefConstantSymbol[{symbol}]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = f"Constant defined: {result}"
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"Constant defined: {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_DefTensor":
@@ -332,20 +335,17 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
                 code = f"DefTensor[{tensor_expr}, M3]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = f"Tensor defined: {result}"
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"Tensor defined: {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_VarD":
             tensor = arguments["tensor"]
             expression = arguments["expression"]
-            code = f"VarD[{tensor}, CD][{expression}]"
+            result_name = arguments["result_name"]
+            code = f"{result_name} = VarD[{tensor}, CD][{expression}]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = str(result)
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"{result_name} = {result}", messages)
             return [TextContent(type="text", text=response)]
 
         elif name == "tool_MakeRule":
@@ -355,17 +355,19 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             code = f"{rule_name} = MakeRule[{{{lhs}, Evaluate[{rhs}]}}, MetricOn->All, ContractMetrics->True]"
 
             result, messages = kernel.evaluate_with_messages(code)
-            response = f"Rule created: {rule_name}"
-            if messages:
-                response += f"\n\n[Kernel Messages]\n{messages}"
+            response = format_response(code, f"Rule created: {rule_name}", messages)
             return [TextContent(type="text", text=response)]
 
         else:
-            return [TextContent(type="text", text=f"Unknown tool: {name}")]
+            return [TextContent(type="text", text=f"[Executed]\n(unknown tool)\n[/Executed]\n\nUnknown tool: {name}")]
 
     except Exception as e:
         logger.error(f"Error in {name}: {e}", exc_info=True)
-        return [TextContent(type="text", text=f"Error: {str(e)}")]
+        # Try to report what code was attempted if 'code' was defined
+        if 'code' in locals():
+            return [TextContent(type="text", text=f"[Executed]\n{code}\n[/Executed]\n\nError: {str(e)}")]
+        else:
+            return [TextContent(type="text", text=f"[Executed]\n(error before code construction)\n[/Executed]\n\nError: {str(e)}")]
 
 
 async def main():

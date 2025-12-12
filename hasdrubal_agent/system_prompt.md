@@ -168,13 +168,13 @@ The following tools are available. Each tool name corresponds to the _Wolfram La
 
 - `tool_GenericWolframScript` - Evaluate arbitrary _Wolfram Language_ code
 - `tool_DefCanonicalField` - Define a canonical field and its conjugate momentum
-- `tool_PoissonBracket` - Compute Poisson bracket between two operators
-- `tool_TotalFrom` - Expand composite quantities to canonical variables
+- `tool_PoissonBracket` - Compute Poisson bracket between two operators and store in named variable
+- `tool_TotalFrom` - Expand variable in-place to canonical variables (pass variable name, not expression)
 - `tool_PrependTotalFrom` - Register an expansion rule for `TotalFrom`
-- `tool_Recanonicalize` - Convert expression to canonical form
+- `tool_Recanonicalize` - Canonicalize variable in-place (pass variable name, not expression)
 - `tool_DefConstantSymbol` - Define a constant (coupling) symbol
 - `tool_DefTensor` - Define a tensor on the spatial manifold `M3`
-- `tool_VarD` - Compute variational derivative
+- `tool_VarD` - Compute variational derivative and store in named variable
 - `tool_MakeRule` - Create a replacement rule for tensor expressions
 
 ## Tool Usage Examples
@@ -194,7 +194,7 @@ Arguments: {"tensor_expr": "Constraint[-a,-b]", "symmetry": "Antisymmetric[{-a,-
 **Example 3: Compute a Poisson bracket**
 ```
 Tool call: tool_PoissonBracket
-Arguments: {"operator1": "SmearingF[]*Phi[]", "operator2": "SmearingS[]*ConjugateMomentumPhi[]"}
+Arguments: {"operator1": "SmearingF[]*Phi[]", "operator2": "SmearingS[]*ConjugateMomentumPhi[]", "result_name": "bracket1"}
 ```
 
 **Example 4: Create and register a rule**
@@ -209,13 +209,25 @@ Arguments: {"rule": "FromConstraint"}
 **Example 5: Variational derivative**
 ```
 Tool call: tool_VarD
-Arguments: {"tensor": "Multiplier[]", "expression": "TotalHamiltonian"}
+Arguments: {"tensor": "Multiplier[]", "expression": "TotalHamiltonian", "result_name": "constraint1"}
 ```
 
-**Example 6: Generic Wolfram code (for variable assignment or other operations)**
+**Example 6: Canonicalize a variable in-place**
+```
+Tool call: tool_Recanonicalize
+Arguments: {"variable": "bracket1"}
+```
+
+**Example 7: Expand a variable in-place**
+```
+Tool call: tool_TotalFrom
+Arguments: {"variable": "constraint1"}
+```
+
+**Example 8: Generic Wolfram code (for expressions or other operations)**
 ```
 Tool call: tool_GenericWolframScript
-Arguments: {"code": "myResult = Recanonicalize[someExpr]"}
+Arguments: {"code": "myResult = Recanonicalize[CD[-a]@Phi[] + CD[-b]@Phi[]]"}
 ```
 
-**Key**: The kernel is persistent, so variables assigned via `tool_GenericWolframScript` remain available across tool calls.
+**Key**: The kernel is persistent, so variables remain available across tool calls. Use `tool_GenericWolframScript` when you need to apply `TotalFrom` or `Recanonicalize` to an expression rather than a variable.
