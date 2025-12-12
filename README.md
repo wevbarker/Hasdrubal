@@ -58,18 +58,9 @@ User Prompt → GPT-5.1 Agent → MCP Tools → Wolfram Kernel → Hamilcar Pack
 - **Hasdrubal Agent** (`hasdrubal_agent.py`): GPT-5.2 with field theory knowledge
 - **REPL** (`hasdrubal_repl/hasdrubal_repl.py`): Interactive interface
 
-### MCP Tools
+### MCP Tool
 
-- `tool_GenericWolframScript`: Execute arbitrary Wolfram Language code
-- `tool_DefCanonicalField`: Define canonical field and momentum
-- `tool_PoissonBracket`: Compute Poisson bracket
-- `tool_TotalFrom`: Expand to canonical variables
-- `tool_PrependTotalFrom`: Register expansion rule
-- `tool_Recanonicalize`: Canonicalize tensor expression
-- `tool_DefConstantSymbol`: Define coupling constant
-- `tool_DefTensor`: Define tensor on M3
-- `tool_VarD`: Variational derivative
-- `tool_MakeRule`: Create replacement rule
+- `tool_WolframScript`: Execute arbitrary Wolfram Language code in the Hamilcar kernel
 
 ## Requirements
 

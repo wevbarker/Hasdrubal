@@ -65,10 +65,9 @@ def ensure_kernel() -> WolframKernelManager:
 async def list_tools() -> list[Tool]:
     """List available Hamilcar tools."""
     return [
-        # Generic Wolfram evaluation
         Tool(
-            name="tool_GenericWolframScript",
-            description="Evaluate arbitrary Wolfram Language code in the Hamilcar kernel",
+            name="tool_WolframScript",
+            description="Evaluate Wolfram Language code in the Hamilcar kernel",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -78,173 +77,6 @@ async def list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["code"]
-            }
-        ),
-        # Hamilcar: DefCanonicalField
-        Tool(
-            name="tool_DefCanonicalField",
-            description="Define a canonical field and its conjugate momentum",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "field_expr": {
-                        "type": "string",
-                        "description": "Field expression, e.g., 'Phi[]' for scalar, 'A[-a]' for vector, 'T[-a,-b]' for tensor"
-                    },
-                    "symmetry": {
-                        "type": "string",
-                        "description": "Optional symmetry specification, e.g., 'Antisymmetric[{-a,-b}]'"
-                    }
-                },
-                "required": ["field_expr"]
-            }
-        ),
-        # Hamilcar: PoissonBracket
-        Tool(
-            name="tool_PoissonBracket",
-            description="Compute Poisson bracket between two operators and store result",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "operator1": {
-                        "type": "string",
-                        "description": "First operator in Wolfram Language syntax"
-                    },
-                    "operator2": {
-                        "type": "string",
-                        "description": "Second operator in Wolfram Language syntax"
-                    },
-                    "result_name": {
-                        "type": "string",
-                        "description": "Variable name to store the result"
-                    }
-                },
-                "required": ["operator1", "operator2", "result_name"]
-            }
-        ),
-        # Hamilcar: TotalFrom
-        Tool(
-            name="tool_TotalFrom",
-            description="Expand a variable in-place to canonical variables (fields, momenta, constants). Pass variable name only, not an expression.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "variable": {
-                        "type": "string",
-                        "description": "Variable name to expand in-place (not an expression)"
-                    }
-                },
-                "required": ["variable"]
-            }
-        ),
-        # Hamilcar: PrependTotalFrom
-        Tool(
-            name="tool_PrependTotalFrom",
-            description="Register an expansion rule for TotalFrom",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "rule": {
-                        "type": "string",
-                        "description": "Rule variable name to register"
-                    }
-                },
-                "required": ["rule"]
-            }
-        ),
-        # Hamilcar: Recanonicalize
-        Tool(
-            name="tool_Recanonicalize",
-            description="Canonicalize a variable in-place (standard ordering of tensor expressions). Pass variable name only, not an expression.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "variable": {
-                        "type": "string",
-                        "description": "Variable name to canonicalize in-place (not an expression)"
-                    }
-                },
-                "required": ["variable"]
-            }
-        ),
-        # xAct: DefConstantSymbol
-        Tool(
-            name="tool_DefConstantSymbol",
-            description="Define a constant (coupling) symbol",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "symbol": {
-                        "type": "string",
-                        "description": "Symbol name to define as constant"
-                    }
-                },
-                "required": ["symbol"]
-            }
-        ),
-        # xAct: DefTensor
-        Tool(
-            name="tool_DefTensor",
-            description="Define a tensor on the spatial manifold M3",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "tensor_expr": {
-                        "type": "string",
-                        "description": "Tensor expression, e.g., 'Constraint[]', 'Multiplier[-a]', 'T[-a,-b]'"
-                    },
-                    "symmetry": {
-                        "type": "string",
-                        "description": "Optional symmetry specification, e.g., 'Antisymmetric[{-a,-b}]'"
-                    }
-                },
-                "required": ["tensor_expr"]
-            }
-        ),
-        # xAct: VarD
-        Tool(
-            name="tool_VarD",
-            description="Compute variational derivative of an expression with respect to a tensor and store result",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "tensor": {
-                        "type": "string",
-                        "description": "Tensor to vary with respect to, e.g., 'Multiplier[]' or 'SmearingF[-a]'"
-                    },
-                    "expression": {
-                        "type": "string",
-                        "description": "Scalar expression to differentiate"
-                    },
-                    "result_name": {
-                        "type": "string",
-                        "description": "Variable name to store the result"
-                    }
-                },
-                "required": ["tensor", "expression", "result_name"]
-            }
-        ),
-        # xAct: MakeRule
-        Tool(
-            name="tool_MakeRule",
-            description="Create a replacement rule for tensor expressions",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "lhs": {
-                        "type": "string",
-                        "description": "Left-hand side (tensor to be expanded), e.g., 'Constraint[]'"
-                    },
-                    "rhs": {
-                        "type": "string",
-                        "description": "Right-hand side (expansion expression)"
-                    },
-                    "rule_name": {
-                        "type": "string",
-                        "description": "Variable name to store the rule"
-                    }
-                },
-                "required": ["lhs", "rhs", "rule_name"]
             }
         ),
     ]
@@ -264,98 +96,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
     kernel = ensure_kernel()
 
     try:
-        if name == "tool_GenericWolframScript":
+        if name == "tool_WolframScript":
             code = arguments["code"]
             result, messages = kernel.evaluate_with_messages(code)
             response = format_response(code, str(result), messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_DefCanonicalField":
-            field_expr = arguments["field_expr"]
-            symmetry = arguments.get("symmetry")
-
-            if symmetry:
-                code = f"DefCanonicalField[{field_expr}, {symmetry}]"
-            else:
-                code = f"DefCanonicalField[{field_expr}]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"Field defined: {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_PoissonBracket":
-            op1 = arguments["operator1"]
-            op2 = arguments["operator2"]
-            result_name = arguments["result_name"]
-            code = f"{result_name} = PoissonBracket[{op1}, {op2}]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"{result_name} = {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_TotalFrom":
-            variable = arguments["variable"]
-            code = f"{variable} //= TotalFrom"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"{variable} = {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_PrependTotalFrom":
-            rule = arguments["rule"]
-            code = f"{rule} // PrependTotalFrom"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"Rule registered: {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_Recanonicalize":
-            variable = arguments["variable"]
-            code = f"{variable} //= Recanonicalize"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"{variable} = {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_DefConstantSymbol":
-            symbol = arguments["symbol"]
-            code = f"DefConstantSymbol[{symbol}]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"Constant defined: {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_DefTensor":
-            tensor_expr = arguments["tensor_expr"]
-            symmetry = arguments.get("symmetry")
-
-            if symmetry:
-                code = f"DefTensor[{tensor_expr}, M3, {symmetry}]"
-            else:
-                code = f"DefTensor[{tensor_expr}, M3]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"Tensor defined: {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_VarD":
-            tensor = arguments["tensor"]
-            expression = arguments["expression"]
-            result_name = arguments["result_name"]
-            code = f"{result_name} = VarD[{tensor}, CD][{expression}]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"{result_name} = {result}", messages)
-            return [TextContent(type="text", text=response)]
-
-        elif name == "tool_MakeRule":
-            lhs = arguments["lhs"]
-            rhs = arguments["rhs"]
-            rule_name = arguments["rule_name"]
-            code = f"{rule_name} = MakeRule[{{{lhs}, Evaluate[{rhs}]}}, MetricOn->All, ContractMetrics->True]"
-
-            result, messages = kernel.evaluate_with_messages(code)
-            response = format_response(code, f"Rule created: {rule_name}", messages)
             return [TextContent(type="text", text=response)]
 
         else:
@@ -363,7 +107,6 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
 
     except Exception as e:
         logger.error(f"Error in {name}: {e}", exc_info=True)
-        # Try to report what code was attempted if 'code' was defined
         if 'code' in locals():
             return [TextContent(type="text", text=f"[Executed]\n{code}\n[/Executed]\n\nError: {str(e)}")]
         else:

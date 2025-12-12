@@ -66,166 +66,6 @@ def load_prompt_file(filename: str) -> str:
     return ""
 
 
-def list_sessions(sessions_dir: Path) -> list:
-    """List available sessions sorted by modification time."""
-    sessions = []
-    for f in sessions_dir.glob("*.jsonl"):
-        # Get first and last user message for preview
-        first_msg = ""
-        last_msg = ""
-        msg_count = 0
-        with open(f) as fh:
-            for line in fh:
-                entry = json.loads(line)
-                if entry["type"] == "user":
-                    if not first_msg:
-                        first_msg = entry["content"][:50]
-                    last_msg = entry["content"][:50]
-                    msg_count += 1
-
-        sessions.append({
-            "path": f,
-            "mtime": f.stat().st_mtime,
-            "first_msg": first_msg,
-            "last_msg": last_msg,
-            "msg_count": msg_count
-        })
-
-    return sorted(sessions, key=lambda x: x["mtime"], reverse=True)
-
-
-def select_session(sessions_dir: Path) -> Path:
-    """Interactive session selection."""
-    sessions = list_sessions(sessions_dir)
-
-    if not sessions:
-        print("No sessions found.")
-        return None
-
-    print("\nAvailable sessions:\n")
-    for i, s in enumerate(sessions[:20]):  # Show last 20
-        ts = datetime.fromtimestamp(s["mtime"]).strftime("%Y-%m-%d %H:%M")
-        preview = s["first_msg"] if s["first_msg"] else "(empty)"
-        print(f"  {i+1:2d}. [{ts}] ({s['msg_count']} msgs) {preview}")
-
-    print()
-    try:
-        choice = input("Select session (number): ").strip()
-        idx = int(choice) - 1
-        if 0 <= idx < len(sessions):
-            return sessions[idx]["path"]
-    except (ValueError, KeyboardInterrupt):
-        pass
-
-    return None
-
-
-def extract_wl_commands(session_path: Path) -> list:
-    """Extract Wolfram Language commands from session for kernel replay."""
-    commands = []
-    with open(session_path) as f:
-        for line in f:
-            entry = json.loads(line)
-            if entry["type"] == "tool_call":
-                name = entry["content"]
-                args = entry.get("arguments", {})
-
-                if name == "evaluate_wolfram":
-                    commands.append(args.get("code", ""))
-                elif name == "define_canonical_field":
-                    field = args.get("field_expr", "")
-                    opts = []
-                    if args.get("field_symbol"):
-                        opts.append(f'FieldSymbol->"{args["field_symbol"]}"')
-                    if args.get("momentum_symbol"):
-                        opts.append(f'MomentumSymbol->"{args["momentum_symbol"]}"')
-                    opts_str = ", " + ", ".join(opts) if opts else ""
-                    commands.append(f"DefCanonicalField[{field}{opts_str}]")
-                elif name == "poisson_bracket":
-                    op1 = args.get("operator1", "")
-                    op2 = args.get("operator2", "")
-                    commands.append(f"PoissonBracket[{op1}, {op2}]")
-    return commands
-
-
-def load_session_history(session_path: Path) -> list:
-    """Load conversation history from session file.
-
-    Uses Responses API format for function calls:
-    - {"type": "function_call", "call_id": "...", "name": "...", "arguments": "..."}
-    - {"type": "function_call_output", "call_id": "...", "output": "..."}
-    """
-    history = []
-    call_counter = 0
-    pending_call_ids = []  # Track call IDs waiting for results
-
-    with open(session_path) as f:
-        for line in f:
-            entry = json.loads(line)
-
-            if entry["type"] == "user":
-                history.append({"role": "user", "content": entry["content"]})
-
-            elif entry["type"] == "tool_call":
-                call_id = f"call_{call_counter}"
-                call_counter += 1
-                pending_call_ids.append(call_id)
-                history.append({
-                    "type": "function_call",
-                    "call_id": call_id,
-                    "name": entry["content"],
-                    "arguments": json.dumps(entry.get("arguments", {})),
-                    "status": "completed"
-                })
-
-            elif entry["type"] == "tool_result":
-                # Match with pending call (FIFO order)
-                call_id = pending_call_ids.pop(0) if pending_call_ids else f"call_{call_counter}"
-                history.append({
-                    "type": "function_call_output",
-                    "call_id": call_id,
-                    "output": entry.get("result", "")
-                })
-
-            elif entry["type"] == "assistant":
-                history.append({"role": "assistant", "content": entry["content"]})
-
-    return history
-
-
-def load_session_for_display(session_path: Path) -> list:
-    """Load session with tool calls for display purposes."""
-    display_history = []
-    pending_tool_calls = []
-
-    with open(session_path) as f:
-        for line in f:
-            entry = json.loads(line)
-
-            if entry["type"] == "user":
-                # Flush pending tool calls
-                if pending_tool_calls:
-                    display_history.append({"role": "assistant", "tool_calls": pending_tool_calls})
-                    pending_tool_calls = []
-                display_history.append({"role": "user", "content": entry["content"]})
-
-            elif entry["type"] == "tool_call":
-                pending_tool_calls.append({
-                    "function": {
-                        "name": entry["content"],
-                        "arguments": json.dumps(entry.get("arguments", {}))
-                    }
-                })
-
-            elif entry["type"] == "assistant":
-                if pending_tool_calls:
-                    display_history.append({"role": "assistant", "tool_calls": pending_tool_calls})
-                    pending_tool_calls = []
-                display_history.append({"role": "assistant", "content": entry["content"]})
-
-    return display_history
-
-
 class SessionLogger:
     """Logs conversation to JSONL file."""
 
@@ -469,70 +309,32 @@ def get_input_with_scroll(prompt, display):
         raise
 
 
-async def interactive_loop(agent, display, mcp_server, session_logger, initial_history=None, display_history=None, initial_prompt=None, auto_mode=False):
+async def interactive_loop(agent, display, mcp_server, session_logger, initial_prompt=None, auto_mode=False):
     """Custom interactive loop with display."""
 
     # Maintain conversation history
-    conversation_history = initial_history or []
+    conversation_history = []
 
     # Track previous turn's tool calls for visibility hack
     previous_tool_calls = []
 
-    # If restoring, show previous messages in display
-    # Use display_history (includes tool calls) for display, initial_history for agent
-    history_for_display = display_history or initial_history
-    if history_for_display:
-        display.add_conv(f"Restored {len(initial_history)} history entries")
-        display.add_conv("")
-        for msg in history_for_display:
-            if msg["role"] == "user":
-                display.add_conv(f"{GREEN_BOLD}> {msg['content']}{RESET}")
-            elif msg["role"] == "assistant":
-                if "tool_calls" in msg:
-                    # Show tool calls - match live format
-                    display.add_conv("")
-                    display.add_conv(f"{PALE_RED_BOLD}Wolfram Code:{RESET}")
-                    for tc in msg["tool_calls"]:
-                        func = tc["function"]
-                        args = json.loads(func["arguments"])
-                        # Format to match live conversation display
-                        if func["name"] == "evaluate_wolfram":
-                            code = args.get("code", "")
-                            display.add_conv(f"{PALE_RED_BOLD}  {code}{RESET}")
-                        elif func["name"] == "define_canonical_field":
-                            field = args.get("field_expr", "?")
-                            opts = []
-                            if args.get("field_symbol"):
-                                opts.append(f'FieldSymbol->"{args["field_symbol"]}"')
-                            if args.get("momentum_symbol"):
-                                opts.append(f'MomentumSymbol->"{args["momentum_symbol"]}"')
-                            opts_str = ", " + ", ".join(opts) if opts else ""
-                            display.add_conv(f"{PALE_RED_BOLD}  DefCanonicalField[{field}{opts_str}]{RESET}")
-                        elif func["name"] == "poisson_bracket":
-                            op1 = args.get("operator1", "?")
-                            op2 = args.get("operator2", "?")
-                            display.add_conv(f"{PALE_RED_BOLD}  PoissonBracket[{op1}, {op2}]{RESET}")
-                        else:
-                            display.add_conv(f"{PALE_RED_BOLD}  {func['name']}{RESET}")
-                    display.add_conv("")
-                elif "content" in msg:
-                    display.add_conv(f"{LIGHT_BLUE_BOLD}Hasdrubal: {msg['content']}{RESET}")
-                    display.add_conv("")
-            # Skip tool result messages in display (too verbose)
-
     # Queue initial prompt if provided via --file
     pending_initial_prompt = initial_prompt
     pending_is_auto = False  # Track if pending prompt is auto-injected "yes"
+    pending_is_summary = False  # Track if pending prompt is summary solicitation
 
     while True:
         # Use initial prompt from --file or auto-injected "yes" if available
         if pending_initial_prompt:
             user_input = pending_initial_prompt
             is_auto_yes = pending_is_auto
+            is_summary_response = pending_is_summary
             pending_initial_prompt = None
             pending_is_auto = False
+            pending_is_summary = False
         else:
             is_auto_yes = False
+            is_summary_response = False
             # Position cursor at input row
             print(MOVE_CURSOR.format(display.get_input_row(), 1), end='')
             print(' ' * display.term_width, end='')  # Clear line
@@ -659,8 +461,11 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
 
             # Challenge: forgot tool call - agent replies without tool calls
             # Skip on first response (agent is just acknowledging the prompt)
+            # Skip if agent is terminating (no tool call expected)
+            # Skip if responding to summary solicitation (no tool call expected)
             is_first_response = len([m for m in conversation_history if m["role"] == "assistant"]) == 0
-            if not tool_call_records and not is_first_response:
+            is_terminating = "TERMINATE" in result.final_output
+            if not tool_call_records and not is_first_response and not is_terminating and not is_summary_response:
                 challenge_msg = load_prompt_file("challenge_forgot_tool_call.md")
                 if challenge_msg:
                     response = result.final_output
@@ -713,19 +518,20 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
             # Add assistant response to history
             conversation_history.append({"role": "assistant", "content": response})
 
-            # Check for challenge triggers
+            # Check for challenge triggers (skip if responding to summary solicitation)
             challenges_triggered = []
 
-            # Challenge: cavalier constraint - agent mentions DefTensor
-            if "DefTensor" in response:
-                challenges_triggered.append("challenge_cavalier_constraint.md")
+            if not is_summary_response:
+                # Challenge: cavalier constraint - agent mentions DefTensor
+                if "DefTensor" in response:
+                    challenges_triggered.append("challenge_cavalier_constraint.md")
 
-            # Challenge: gloss over error - tool call had kernel messages (warnings/errors)
-            if tool_call_records:
-                for code, output, messages in tool_call_records:
-                    if messages:
-                        challenges_triggered.append("challenge_gloss_over_error.md")
-                        break
+                # Challenge: gloss over error - tool call had kernel messages (warnings/errors)
+                if tool_call_records:
+                    for code, output, messages in tool_call_records:
+                        if messages:
+                            challenges_triggered.append("challenge_gloss_over_error.md")
+                            break
 
             # Issue challenges if any triggered (concatenated together)
             if challenges_triggered:
@@ -759,11 +565,22 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_h
             # Update previous_tool_calls for next turn's visibility hack
             previous_tool_calls = tool_call_records
 
+            # After summary response, exit auto mode (agent gets the last word)
+            if is_summary_response:
+                display.add_conv(f"{YELLOW_BOLD}[Summary complete - returning to manual mode]{RESET}")
+                auto_mode = False
             # In auto mode, inject "yes" as next input (unless TERMINATE or ABORT detected)
-            if auto_mode:
+            elif auto_mode:
                 if "TERMINATE" in response:
-                    display.add_conv(f"{YELLOW_BOLD}[TERMINATE detected - exiting auto mode]{RESET}")
-                    auto_mode = False  # Exit auto mode, return to manual input
+                    display.add_conv(f"{YELLOW_BOLD}[TERMINATE detected - soliciting summary]{RESET}")
+                    # Inject summary request and continue for one more turn
+                    summary_prompt = load_prompt_file("solicit_summary.md")
+                    if summary_prompt:
+                        pending_initial_prompt = summary_prompt
+                        pending_is_auto = False  # This will be the final turn
+                        pending_is_summary = True  # Exempt from challenges
+                    else:
+                        auto_mode = False
                 elif "ABORT" in response:
                     display.add_conv(f"{YELLOW_BOLD}[ABORT detected - exiting auto mode]{RESET}")
                     auto_mode = False  # Exit auto mode, return to manual input
@@ -787,7 +604,6 @@ async def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Hasdrubal Interactive REPL")
-    parser.add_argument("--restore", action="store_true", help="Restore a previous session")
     parser.add_argument("-f", "--file", type=str, help="Path to .md file for initial prompt")
     parser.add_argument("-a", "--auto", action="store_true", help="Automatic mode: auto-reply 'yes' after each agent response")
     args = parser.parse_args()
@@ -812,27 +628,6 @@ async def main():
 
     sessions_dir = project_root / "sessions"
 
-    # Handle session restore
-    initial_history = []
-    restore_session_id = None
-
-    # Commands to replay for kernel state
-    wl_commands = []
-    display_history = []
-
-    if args.restore:
-        selected = select_session(sessions_dir)
-        if selected:
-            initial_history = load_session_history(selected)
-            display_history = load_session_for_display(selected)
-            wl_commands = extract_wl_commands(selected)
-            restore_session_id = selected.stem  # Use same session ID
-            print(f"\nRestoring session: {restore_session_id}")
-            print(f"Loaded {len(initial_history)} messages, {len(wl_commands)} WL commands")
-        else:
-            print("No session selected, starting fresh.")
-            return
-
     # Get terminal size
     try:
         term_size = os.get_terminal_size()
@@ -845,8 +640,8 @@ async def main():
     # Create display manager (split_ratio=0.25 means logs take top 1/4, conversation takes bottom 3/4)
     display = SplitPaneDisplay(term_height=term_height, term_width=term_width, split_ratio=0.25)
 
-    # Create session logger (reuse ID if restoring)
-    session_logger = SessionLogger(sessions_dir, restore_session_id)
+    # Create session logger
+    session_logger = SessionLogger(sessions_dir)
 
     # Configure logging to go to upper pane
     log_handler = LogCapture(display)
@@ -888,25 +683,11 @@ async def main():
         display.add_conv(f"Model: {agent.model}")
         display.add_conv("")
 
-        # Replay WL commands to restore kernel state
-        if wl_commands:
-            display.add_conv(f"Restoring kernel state ({len(wl_commands)} commands)...")
-            for i, cmd in enumerate(wl_commands):
-                try:
-                    await mcp_server.call_tool("evaluate_wolfram", {"code": cmd})
-                    # Update progress every few commands
-                    if (i + 1) % 3 == 0 or i == len(wl_commands) - 1:
-                        display.add_log(f"{GRAY}Restored {i+1}/{len(wl_commands)} commands{RESET}")
-                except Exception as e:
-                    display.add_log(f"Warning: Failed to restore command: {str(e)[:50]}")
-            display.add_conv("Kernel state restored")
-            display.add_conv("")
-
         display.add_conv("Ready! Type 'quit' or 'exit' to stop.")
         display.add_conv("")
 
         # Run interactive loop
-        await interactive_loop(agent, display, mcp_server, session_logger, initial_history, display_history, initial_prompt, args.auto)
+        await interactive_loop(agent, display, mcp_server, session_logger, initial_prompt, args.auto)
 
         # Cleanup
         session_logger.close()
