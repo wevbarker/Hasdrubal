@@ -7,7 +7,7 @@ Code[DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"]];
 
 Comment@"Set up a vector field.";
 Code[DefField[FirstVectorField[a],PrintAs->"\[ScriptCapitalA]",
-	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->35];];
+	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->20];];
 Expr=FirstVectorField[a];
 Expr//DisplayExpression;
 

@@ -12,13 +12,13 @@ Code[DefConstantSymbol[FirstSquareMassCoupling,PrintAs->"\[Zeta]"]];
 
 Comment@"Set up a vector field.";
 Code[DefField[FirstScalarField[],PrintAs->"\[Phi]",
-	PrintSourceAs->"\[Rho]",TableWidth->35];];
+	PrintSourceAs->"\[Rho]",TableWidth->20];];
 Code[DefField[FirstVectorField[-a],PrintAs->"\[ScriptCapitalA]",
-	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->35];];
+	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->20];];
 Code[DefField[SecondVectorField[-a],PrintAs->"\[ScriptCapitalB]",
-	PrintSourceAs->"\[ScriptCapitalK]",TableWidth->35];];
+	PrintSourceAs->"\[ScriptCapitalK]",TableWidth->20];];
 Code[DefField[ThirdVectorField[-a],PrintAs->"\[ScriptCapitalC]",
-	PrintSourceAs->"\[ScriptCapitalK]",TableWidth->35];];
+	PrintSourceAs->"\[ScriptCapitalL]",TableWidth->20];];
 
 Comment@"We construct a Lagrangian density.";
 LagrangianAnsatz=(

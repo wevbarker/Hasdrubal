@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from collections import deque
 
 # Load environment
-load_dotenv("config/.env")
+load_dotenv("config/.env", override=True)
 
 # Add project root to path for local imports
 project_root = Path(__file__).parent.parent

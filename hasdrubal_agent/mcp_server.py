@@ -17,7 +17,7 @@ from mcp.types import Tool, TextContent
 from tools.wolfram_kernel import WolframKernelManager
 
 # Load environment variables
-load_dotenv("config/.env")
+load_dotenv("config/.env", override=True)
 
 # Configure logging with colored timestamps
 GRAY = '\033[90m'

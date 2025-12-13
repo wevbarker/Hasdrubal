@@ -5,7 +5,7 @@ This document contains the complete source code for:
 1. Hamilcar - Canonical field theory package
 2. Model Catalogue - Worked examples of Dirac-Bergmann constraint analysis
 
-Fri Dec 12 06:04:02 PM CET 2025
+Sat Dec 13 02:12:27 AM CET 2025
 
 ========================================
 

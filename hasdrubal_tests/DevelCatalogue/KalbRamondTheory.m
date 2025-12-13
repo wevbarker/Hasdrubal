@@ -7,7 +7,7 @@ Code[DefConstantSymbol[FirstKineticCoupling,PrintAs->"\[Alpha]"]];
 
 Comment@"Set up a two-form field.";
 Code[DefField[FirstTwoFormField[-a,-b],Antisymmetric[{-a,-b}],PrintAs->"\[ScriptCapitalB]",
-	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->35];];
+	PrintSourceAs->"\[ScriptCapitalJ]",TableWidth->20];];
 Expr=FirstTwoFormField[-a,-b];
 Expr//DisplayExpression;
 
