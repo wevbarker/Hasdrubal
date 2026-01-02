@@ -4,7 +4,7 @@ A multi-agent system for automating the Dirac-Bergmann algorithm in canonical fi
 
 ## Overview
 
-Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analysis for free bosonic field theories, from start to finish, without user intervention. The system delegates Poisson bracket computations to [Hamilcar](https://github.com/wbarker/Hamilcar) via a Wolfram kernel, while using large language model inference for high-level algorithmic decisions.
+Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analysis for free bosonic field theories, from start to finish, without user intervention. The system delegates Poisson bracket computations to [Hamilcar](https://github.com/wevbarker/Hamilcar) via a Wolfram kernel, while using large language model inference for high-level algorithmic decisions.
 
 This repository provides the supplementary material for:
 
@@ -18,7 +18,7 @@ This repository provides the supplementary material for:
     title = "{Orchestration of Dirac--Bergmann Hamiltonian analysis by large language models}",
     journal = "Phys. Rev. D",
     year = "2025",
-    note = "Supplementary code: https://github.com/wbarker/Hasdrubal"
+    note = "Supplementary code: https://github.com/wevbarker/Hasdrubal"
 }
 ```
 
@@ -27,13 +27,13 @@ This repository provides the supplementary material for:
 - **Python 3.9+**
 - **Wolfram Mathematica** (with valid license) or Wolfram Engine
 - **OpenAI API key** with access to GPT-5.2
-- **Hamilcar** package for xAct/Mathematica ([installation instructions](https://github.com/wbarker/Hamilcar))
+- **Hamilcar** package for xAct/Mathematica ([installation instructions](https://github.com/wevbarker/Hamilcar))
 
 ## Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/wbarker/Hasdrubal.git
+   git clone https://github.com/wevbarker/Hasdrubal.git
    cd Hasdrubal
    ```
 
@@ -54,7 +54,7 @@ This repository provides the supplementary material for:
    - `tenacity` (9.1.2) - Retry logic for rate limits
    - `mcp` (1.18.0) - Model Context Protocol
 
-4. Install Hamilcar in Mathematica (see [Hamilcar README](https://github.com/wbarker/Hamilcar)).
+4. Install Hamilcar in Mathematica (see [Hamilcar README](https://github.com/wevbarker/Hamilcar)).
 
 ## Configuration
 
