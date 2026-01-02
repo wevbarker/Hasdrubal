@@ -24,6 +24,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from collections import deque
+from openai import RateLimitError
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type, before_sleep_log
 
 # Load environment
 load_dotenv("config/.env", override=True)
@@ -42,6 +44,48 @@ create_hasdrubal_agent = hasdrubal_agent.create_hasdrubal_agent
 # Import from agents package
 from agents import Agent, Runner
 from agents.mcp import MCPServerStdio
+
+# Logger for retry logging
+retry_logger = logging.getLogger("hasdrubal.retry")
+
+
+async def run_with_retry(agent, conversation_history, display=None):
+    """
+    Run the agent with automatic retry on rate limit errors.
+    Uses exponential backoff with jitter as per OpenAI best practices.
+    """
+    max_attempts = 6
+    attempt = 0
+
+    while attempt < max_attempts:
+        try:
+            return await Runner.run(agent, conversation_history)
+        except RateLimitError as e:
+            attempt += 1
+            if attempt >= max_attempts:
+                raise
+
+            # Parse wait time from error message if available
+            error_msg = str(e)
+            wait_time = 5.0  # default
+            if "Please try again in" in error_msg:
+                import re
+                match = re.search(r"try again in (\d+\.?\d*)s", error_msg)
+                if match:
+                    wait_time = float(match.group(1)) + 0.5  # Add small buffer
+
+            # Apply exponential backoff with jitter
+            import random
+            jitter = random.uniform(0, 1)
+            backoff_time = min(wait_time * (2 ** (attempt - 1)) + jitter, 60)
+
+            msg = f"Rate limit hit. Waiting {backoff_time:.1f}s before retry {attempt}/{max_attempts}..."
+            retry_logger.warning(msg)
+            if display:
+                display.add_log(f"{YELLOW_BOLD}{msg}{RESET}")
+
+            await asyncio.sleep(backoff_time)
+
 
 # ANSI codes
 GRAY = '\033[90m'
@@ -457,7 +501,7 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_p
             # Add user message to history (with preamble if applicable)
             conversation_history.append({"role": "user", "content": augmented_input})
 
-            result = await Runner.run(agent, conversation_history)
+            result = await run_with_retry(agent, conversation_history, display)
 
             # Challenge: forgot tool call - agent replies without tool calls
             # Skip on first response (agent is just acknowledging the prompt)
@@ -489,7 +533,7 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_p
 
                     # Clear and re-run
                     tool_call_records.clear()
-                    result = await Runner.run(agent, conversation_history)
+                    result = await run_with_retry(agent, conversation_history, display)
 
             # Show WL codes, outputs, and messages in conversation pane
             if tool_call_records:
@@ -553,7 +597,7 @@ async def interactive_loop(agent, display, mcp_server, session_logger, initial_p
 
                     # Re-run agent with challenge
                     tool_call_records.clear()
-                    result = await Runner.run(agent, conversation_history)
+                    result = await run_with_retry(agent, conversation_history, display)
 
                     # Show new response
                     response = result.final_output

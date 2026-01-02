@@ -17,6 +17,7 @@ Get@FileNameJoin[{"DevelCatalogue","ThreePlusOne.m"}];
 (*Get@FileNameJoin[{"DevelCatalogue","MassiveMarzoTheory.m"}];*)
 (*Get@FileNameJoin[{"DevelCatalogue","KalbRamondTheory.m"}];*)
 (*Get@FileNameJoin[{"DevelCatalogue","CombinedTheory1.m"}];*)
-(**)Get@FileNameJoin[{"DevelCatalogue","CombinedTheory2.m"}];(**)
+(*Get@FileNameJoin[{"DevelCatalogue","CombinedTheory2.m"}];*)
+(**)Get@FileNameJoin[{"DevelCatalogue","ZlosnikTheory.m"}];(**)
 
 Quit[];

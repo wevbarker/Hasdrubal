@@ -38,7 +38,7 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 	Comment@"Here is the linear theory for export to PSALTer.";
 	InputExprVar=InputExpr;
 	ModelNameVar=ModelName;
-	Block[{(*xAct`PSALTer`Private`$Disabled=True*)},
+	Block[{(**)xAct`PSALTer`Private`$Disabled=True(**)},
 		Catch@xAct`xPlain`Code[InputExprVar,ModelNameVar,
 			ParticleSpectrum[InputExpr,
 				TheoryName->ModelName,
@@ -53,6 +53,7 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 		FieldNames=OptionValue@DeclaredFieldNames;,
 		FieldNames//=ExtractFields;
 	];
+	FieldNames//=DeleteCases[#,"xAct`PSALTer`V`"]&;
 
 	$DerivativeRules={};
 	$CanonicalFields={};
@@ -97,17 +98,6 @@ ThreePlusOne[InputExpr_,ModelName_,OptionsPattern[]]:=Module[{
 	ThreePlusOneLagrangian//=ContractMetric;
 	ThreePlusOneLagrangian//=ScreenDollarIndices;
 	ThreePlusOneLagrangian//DisplayExpression;
-
-	(*xAct`PSALTer`MetricPerturbation`Rank2SymmetricPara0pCanonicalFieldp=Zero;
-	xAct`PSALTer`MetricPerturbation`Rank2SymmetricPara0pCanonicalField=Zero;
-	ThreePlusOneLagrangian//=ToCanonical;
-	ThreePlusOneLagrangian//=ContractMetric;
-	ThreePlusOneLagrangian//=ScreenDollarIndices;
-	ThreePlusOneLagrangian//DisplayExpression;
-	ThreePlusOneLagrangian//Together;
-	ThreePlusOneLagrangian//Numerator;
-	Quit[];*)
-
 
 	Comment@"The total Hamiltonian.";
 	$Velocities//=((FromIndexFree@ToIndexFree@#)&/@#)&;
