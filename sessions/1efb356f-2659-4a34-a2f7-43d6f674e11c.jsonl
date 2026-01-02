@@ -1,0 +1,10 @@
+{"timestamp": "2025-11-22T22:01:38.360793Z", "type": "user", "content": "Hi define a canonical vector and a pair of smearing functions"}
+{"timestamp": "2025-11-22T22:01:41.498415Z", "type": "tool_call", "content": "define_canonical_field", "arguments": {"field_expr": "A[-a]", "field_symbol": "A", "momentum_symbol": "E"}}
+{"timestamp": "2025-11-22T22:01:41.498765Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingF[-a], M3, PrintAs->\"\\[ScriptF]\"]"}}
+{"timestamp": "2025-11-22T22:01:41.498992Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingS[-a], M3, PrintAs->\"\\[ScriptS]\"]"}}
+{"timestamp": "2025-11-22T22:01:45.630484Z", "type": "tool_result", "content": "define_canonical_field", "result": "Field defined: None"}
+{"timestamp": "2025-11-22T22:01:45.632620Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
+{"timestamp": "2025-11-22T22:01:45.632954Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
+{"timestamp": "2025-11-22T22:01:48.992266Z", "type": "assistant", "content": "I have defined a canonical vector field \\( A[-a] \\) with its conjugate momentum \\( E[-a] \\), and a pair of smearing functions \\( \\mathcal{F}[-a] \\) and \\( \\mathcal{S}[-a] \\)."}
+{"timestamp": "2025-11-22T22:04:43.290017Z", "type": "user", "content": "Hi, can you now compute the Poisson bracket between the vector and its conjugate momentum?"}
+{"timestamp": "2025-11-22T22:05:45.127507Z", "type": "user", "content": "You there?"}

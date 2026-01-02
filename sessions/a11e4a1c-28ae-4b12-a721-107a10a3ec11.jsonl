@@ -1,0 +1,13 @@
+{"timestamp": "2025-11-22T21:30:08.111948Z", "type": "user", "content": "Hi set manual smearing true"}
+{"timestamp": "2025-11-22T21:30:11.441435Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "$ManualSmearing = True;"}}
+{"timestamp": "2025-11-22T21:30:15.421774Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
+{"timestamp": "2025-11-22T21:30:18.489554Z", "type": "assistant", "content": "Manual smearing has been set to true."}
+{"timestamp": "2025-11-22T21:30:38.094607Z", "type": "user", "content": "Great, define a canonical vector field and a pair of smearing functions."}
+{"timestamp": "2025-11-22T21:30:42.848377Z", "type": "tool_call", "content": "define_canonical_field", "arguments": {"field_expr": "A[-a]", "field_symbol": "A", "momentum_symbol": "E"}}
+{"timestamp": "2025-11-22T21:30:42.848695Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingF[-a], M3, PrintAs->\"\\[ScriptF]\"]; DefTensor[SmearingS[-a], M3, PrintAs->\"\\[ScriptS]\"]; "}}
+{"timestamp": "2025-11-22T21:30:42.897876Z", "type": "tool_result", "content": "define_canonical_field", "result": "Field defined: None"}
+{"timestamp": "2025-11-22T21:30:42.898687Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
+{"timestamp": "2025-11-22T21:30:50.054219Z", "type": "assistant", "content": "The canonical vector field \\( A[-a] \\) has been defined with momentum \\( E[a] \\). Two smearing functions, \\( \\text{SmearingF}[-a] \\) and \\( \\text{SmearingS}[-a] \\), have also been defined."}
+{"timestamp": "2025-11-22T21:31:13.129350Z", "type": "user", "content": "Good. Compute the Poisson bracket between the canonical vector and its conjugate momentum"}
+{"timestamp": "2025-11-22T21:31:16.177873Z", "type": "tool_call", "content": "poisson_bracket", "arguments": {"operator1": "A[-i]", "operator2": "ConjugateMomentumA[j]"}}
+{"timestamp": "2025-11-22T21:32:34.067477Z", "type": "user", "content": "Try that again"}

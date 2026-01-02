@@ -10,7 +10,6 @@ __pycache__/
 config/.env
 
 # Session logs
-sessions/
 *.log
 .hasdrubal.log
 
