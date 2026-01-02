@@ -1,8 +1,0 @@
-{"timestamp": "2025-11-22T21:57:21.276051Z", "type": "user", "content": "Hi, define a canonical vector and a pair of smearing functions"}
-{"timestamp": "2025-11-22T21:57:24.382421Z", "type": "tool_call", "content": "define_canonical_field", "arguments": {"field_expr": "A[a]", "field_symbol": "A", "momentum_symbol": "E"}}
-{"timestamp": "2025-11-22T21:57:24.382787Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingF[-a], M3, PrintAs->\"\\[ScriptF]\"]"}}
-{"timestamp": "2025-11-22T21:57:24.383037Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingS[-a], M3, PrintAs->\"\\[ScriptS]\"]"}}
-{"timestamp": "2025-11-22T21:57:28.583238Z", "type": "tool_result", "content": "define_canonical_field", "result": "Field defined: None"}
-{"timestamp": "2025-11-22T21:57:28.585435Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
-{"timestamp": "2025-11-22T21:57:28.585768Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
-{"timestamp": "2025-11-22T21:57:31.826067Z", "type": "assistant", "content": "The canonical vector field \\(A[a]\\) and its conjugate momentum \\(E[a]\\) have been defined. Additionally, two smearing functions \\( \\mathcal{F}[-a] \\) and \\( \\mathcal{S}[-a] \\) are set up for the field."}

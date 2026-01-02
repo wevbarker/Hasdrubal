@@ -1,7 +1,0 @@
-{"timestamp": "2025-11-22T22:06:06.718460Z", "type": "user", "content": "Hi, can you prepare a canonical vector and a pair of smearing functions?"}
-{"timestamp": "2025-11-22T22:06:10.816664Z", "type": "tool_call", "content": "define_canonical_field", "arguments": {"field_expr": "A[a]", "field_symbol": "A", "momentum_symbol": "E"}}
-{"timestamp": "2025-11-22T22:06:10.817031Z", "type": "tool_call", "content": "evaluate_wolfram", "arguments": {"code": "DefTensor[SmearingF[-a], M3, PrintAs->\"\\[ScriptF]\"]; DefTensor[SmearingS[-a], M3, PrintAs->\"\\[ScriptS]\"];"}}
-{"timestamp": "2025-11-22T22:06:14.963567Z", "type": "tool_result", "content": "define_canonical_field", "result": "Field defined: None"}
-{"timestamp": "2025-11-22T22:06:14.963982Z", "type": "tool_result", "content": "evaluate_wolfram", "result": "None"}
-{"timestamp": "2025-11-22T22:06:17.763605Z", "type": "assistant", "content": "I've defined a canonical vector field \\( A[a] \\) with conjugate momentum \\( E[a] \\), and also created the smearing functions \\( \\text{SmearingF}[-a] \\) and \\( \\text{SmearingS}[-a] \\)."}
-{"timestamp": "2025-11-22T22:07:00.231781Z", "type": "user", "content": "Great, can you now compute the Poisson bracket between the canonical vector and its conjugate momentum?"}
