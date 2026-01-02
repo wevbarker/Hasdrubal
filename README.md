@@ -8,7 +8,7 @@ Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analys
 
 This repository provides the supplementary material for:
 
-> W. Barker, "Orchestration of Dirac-Bergmann Hamiltonian analysis by large language models," *Phys. Rev. D* (2025).
+> W. Barker, "Orchestration of Dirac-Bergmann Hamiltonian analysis by large language models," arXiv:XXXX.XXXXX [hep-th] (2025).
 
 ## Citation
 
@@ -16,11 +16,15 @@ This repository provides the supplementary material for:
 @article{Barker:2025hasdrubal,
     author = "Barker, Will",
     title = "{Orchestration of Dirac--Bergmann Hamiltonian analysis by large language models}",
-    journal = "Phys. Rev. D",
+    eprint = "XXXX.XXXXX",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-th",
     year = "2025",
     note = "Supplementary code: https://github.com/wevbarker/Hasdrubal"
 }
 ```
+
+*Note: The arXiv identifier will be updated once the preprint is announced.*
 
 ## Requirements
 
