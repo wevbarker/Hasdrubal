@@ -8,6 +8,8 @@ A multi-agent system for automating the Dirac-Bergmann algorithm in canonical fi
 
 Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analysis for free bosonic field theories, from start to finish, without user intervention. The system delegates Poisson bracket computations to [Hamilcar](https://github.com/wevbarker/Hamilcar) via a Wolfram kernel, while using large language model inference for high-level algorithmic decisions.
 
+You can find a write-up of the results [here](Manuscript.pdf).
+
 ## Requirements
 
 - **Python 3.9+**
