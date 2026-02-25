@@ -8,26 +8,6 @@ A multi-agent system for automating the Dirac-Bergmann algorithm in canonical fi
 
 Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analysis for free bosonic field theories, from start to finish, without user intervention. The system delegates Poisson bracket computations to [Hamilcar](https://github.com/wevbarker/Hamilcar) via a Wolfram kernel, while using large language model inference for high-level algorithmic decisions.
 
-This repository provides the supplementary material for:
-
-> W. Barker, "Orchestration of Dirac-Bergmann Hamiltonian analysis by large language models," arXiv:XXXX.XXXXX [physics.comp-ph] (2025).
-
-## Citation
-
-```bibtex
-@article{Barker:2025hasdrubal,
-    author = "Barker, Will",
-    title = "{Orchestration of Dirac--Bergmann Hamiltonian analysis by large language models}",
-    eprint = "XXXX.XXXXX",
-    archivePrefix = "arXiv",
-    primaryClass = "physics.comp-ph",
-    year = "2025",
-    note = "Supplementary code: https://github.com/wevbarker/Hasdrubal"
-}
-```
-
-*Note: The arXiv identifier will be updated once the preprint is announced.*
-
 ## Requirements
 
 - **Python 3.9+**
