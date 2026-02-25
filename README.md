@@ -1,3 +1,5 @@
+<img src="hasdrubal_logos/GitHubLogo.png" width="1000">
+
 # Hasdrubal
 
 A multi-agent system for automating the Dirac-Bergmann algorithm in canonical field theory.
