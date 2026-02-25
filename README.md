@@ -10,6 +10,8 @@ Hasdrubal orchestrates the complete Dirac-Bergmann Hamiltonian constraint analys
 
 You can find a write-up of the results [here](Manuscript.pdf).
 
+<img src="hasdrubal_logos/HasdrubalWorkflow.png" width="1000">
+
 ## Requirements
 
 - **Python 3.9+**
